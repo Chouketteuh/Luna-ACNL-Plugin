@@ -127,7 +127,7 @@ namespace CTRPluginFramework
 
 	const std::string SetSeedersNote = "Sets ID for:" << Color::DeepSkyBlue << "\n-1st slot of the inventory (+ copy)\n-All droppers\n-PickUp Mod\n-Map Editor" << Color::White;
 	const std::string TouchDropNote = "BEST DROP EVER\n\n" + TurboNote;
-	const std::string AnimModNote = "Select your animation with the\nanimation selector,\n then execute it with (Execution key)\n\n" + TurboNote << Color::White;
+	const std::string AnimModNote = "Select your animation with the\nanimation selector,\nthen execute it with (Execution Key)\n\n" + TurboNote << Color::White;
 	const std::string ForceAnimationsToOthersNote = "Force on everyone:" << Color::DeepSkyBlue << "\n-Animations\n-Moonjump\n-Restore movements (Idle)\n\n" + TurboNote << Color::White;
 	const std::string OnlineIslandModelNote = " If you want this cheat working " << Color::White << "\n\n-Enable it before going to the online island\n-Require to be the host\n(The one with the chat bar in " << Color::Blue << "BLUE" << Color::White << ")";
 
@@ -185,7 +185,7 @@ namespace CTRPluginFramework
 
 		menu += new MenuFolder(Color::Yellow << "Items", std::vector<MenuEntry *>(
 		{
-			EntryWithHotkey(new MenuEntry(Color::Red << " All Seeders", SetSeeders, OptionSetSeeders, SetSeedersNote),{Hotkey(Key::B | Key::DPadRight, Color::Yellow << "Set ID"), Hotkey(Key::B | Key::DPadDown, "Copy ID on the ground"), Hotkey(Key::Start | Key::B, "Set ID to replace"), Hotkey(Key::ZL, "Scroll Item Left"), Hotkey(Key::ZR, "Scroll Item Right")}),
+			EntryWithHotkey(new MenuEntry(Color::Red << " All Seeders", SetSeeders, OptionSetSeeders, SetSeedersNote),{Hotkey(Key::B | Key::DPadRight, Color::Yellow << "Set ID"), Hotkey(Key::B | Key::DPadDown, "Copy ID on the ground"), Hotkey(Key::Start | Key::B, "Set ID to replace"), Hotkey(Key::L, "Scroll Item Left"), Hotkey(Key::R, "Scroll Item Right")}),
 			new MenuEntry(Color::Orange << " Touch Drop: ", TouchDrop, TouchDropNote),
 			EntryWithHotkey(new MenuEntry(Color::Yellow << " Auto Drop", AutoDrop),{Hotkey(Key::B | Key::DPadLeft, OnOffNote)}),
 			EntryWithHotkey(new MenuEntry(Color::LimeGreen << " Drop Modifier", DropModifier, OptionDropModifier, ""),{Hotkey(Key::X | Key::DPadUp, SelectModeNote)}),
@@ -219,7 +219,7 @@ namespace CTRPluginFramework
 			new MenuEntry(Color::Red << " Building Mod", nullptr, BuildingMod, ReloadNote),
 			new MenuEntry(Color::Orange << " Town Acres Editor" + Soon, nullptr), // soon, add for island
 			new MenuEntry(Color::Yellow << " Weather Mod", nullptr, WeatherMod),
-			new MenuEntry(Color::LimeGreen << " Saison Mod", nullptr, SeasonMod),
+			new MenuEntry(Color::LimeGreen << " Season Mod", nullptr, SeasonMod),
 			new MenuEntry(Color::Turquoise << " Festival Mod" + Crash, nullptr, FestivalMod),
 			new MenuEntry(Color::Magenta << " Mainstreet Shops Open", MainStreetShopOpen),
 			new MenuEntry(Color::Purple << " Nookling Upgrades", nullptr, NookAmeliorations),

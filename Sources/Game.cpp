@@ -506,7 +506,9 @@ namespace CTRPluginFramework
 
 	void Game::AskReloadRoom(void)
 	{
-		Game::AskReloadRoom();
+		Sleep(Milliseconds(20));
+		if(MessageBox("Do you want to reload room?", DialogType::DialogYesNo).SetClear(ClearScreen::Top)())
+			Game::ReloadRoom();
 	}
 	
 	//Get Room Reload Data

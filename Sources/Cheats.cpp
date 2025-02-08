@@ -381,7 +381,7 @@ namespace CTRPluginFramework
 
 	void    SetCoordSpeed(MenuEntry *entry)
 	{
-		SetUpKB("Enter the speed you want to use:", false, 2, CoordSpeed, CoordSpeed);
+		SetUpKB("Enter the speed you want to use:", false, 4, CoordSpeed, CoordSpeed);
 	}
 
     void    TouchCoordinates(MenuEntry *entry)
@@ -1258,7 +1258,7 @@ namespace CTRPluginFramework
 		static Hook h;
 		u32 x, y;
 
-		if (!entry->IsActivated() || !IsCatalogOpen)
+		if(!entry->IsActivated() || !IsCatalogOpen)
 		{
 			if(Save)
 			{
@@ -1312,7 +1312,7 @@ namespace CTRPluginFramework
 			Process::Write32(0x70E494 + 4, 0x0A00000B);	//0x70D4B4 EUR
 
 			IsCatalogOpen = false;
-		} //desactivé la save tlt tant que le cheat est actif?
+		}
 	}
 
 	/*
@@ -2447,50 +2447,51 @@ namespace CTRPluginFramework
 		static const u16 Empty = 2;
         static bool Enabling = false;
 
-        u32 KeyboardAddr = *(u32 *)USA_Keyboard_Pointer;
-        if(KeyboardAddr != 0 && !Enabling)
+		if(entry->IsActivated())
 		{
-            Sleep(Seconds(0.25f));
-            u16 Layout[100] =
-            {
-				//Empty
-				Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,
-                Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,
+        	u32 KeyboardAddr = *(u32 *)USA_Keyboard_Pointer;
+        	if(KeyboardAddr != 0 && !Enabling)
+			{
+            	Sleep(Seconds(0.25f));
+            	u16 Layout[100] =
+            	{
+					//Empty
+					Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,
+                	Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,
 
-				//Start Keyboard 1
-				//Keyboard Line 1
-				0xE000, 0xE001, 0xE002, 0xE003, 0xE004, 0xE005, 0xE006, 0xE077, 0xE056,
-				//Keyboard Line 2
-                0xE008, 0xE009, 0xE06D, 0xE06E, 0xE007, 0xE019, 0xE01A, 0xE01B, 0xE01C,
-				//Keyboard Line 3
-                0xE020, 0xE021, 0xE022, 0xE023, 0xE01E, 0xE03C, 0xE03D, 0xE06C, 0xE073,
-				//Keyboard Line 4
-                0xE062, 0xE058, 0xE05D, 0xE017, 0xE015, 0xE016, 0xE018, 
-				//Empty
-				Empty, Empty,
+					//Start Keyboard 1
+					//Keyboard Line 1
+					0xE000, 0xE001, 0xE002, 0xE003, 0xE004, 0xE005, 0xE006, 0xE077, 0xE056,
+					//Keyboard Line 2
+                	0xE008, 0xE009, 0xE06D, 0xE06E, 0xE007, 0xE019, 0xE01A, 0xE01B, 0xE01C,
+					//Keyboard Line 3
+                	0xE020, 0xE021, 0xE022, 0xE023, 0xE01E, 0xE03C, 0xE03D, 0xE06C, 0xE073,
+					//Keyboard Line 4
+                	0xE062, 0xE058, 0xE05D, 0xE017, 0xE015, 0xE016, 0xE018, 
+					//Empty
+					Empty, Empty,
 
-				//Start MAJ Keyboard 1
-				//Keyboard Line 1
-                0xE036, 0xE037, 0xE038, 0xE039, 0xE00D, 0xE070, 0xE071,
-				//Keyboard Line 2
-                0xE040, 0xE042, 0xE043, 0xE04A, 0xE04B, 0xE045, 0xE046, 0xE047, 0xE048,
-				//Keyboard Line 3
-                0xE04C, 0xE04D, 0xE04E, 0xE04F, 0xE052, 0xE053, 0xE067, 0xE075, 0xE00C,
-				//Keyboard Line 4
-                0xFFFF, 0xE033, 0xE030, 0xE028, 0xE029, 0xE02A,
-				//Empty
-				Empty, Empty, Empty,
+					//Start MAJ Keyboard 1
+					//Keyboard Line 1
+                	0xE036, 0xE037, 0xE038, 0xE039, 0xE00D, 0xE070, 0xE071,
+					//Keyboard Line 2
+                	0xE040, 0xE042, 0xE043, 0xE04A, 0xE04B, 0xE045, 0xE046, 0xE047, 0xE048,
+					//Keyboard Line 3
+                	0xE04C, 0xE04D, 0xE04E, 0xE04F, 0xE052, 0xE053, 0xE067, 0xE075, 0xE00C,
+					//Keyboard Line 4
+                	0xFFFF, 0xE033, 0xE030, 0xE028, 0xE029, 0xE02A,
+					//Empty
+					Empty, Empty, Empty,
 
-				//Start Keyboard 2
-				SymbolID
-			};
-			KeyboardAddr = KeyboardAddr - 0xA8A; //Address
-            Process::Patch(KeyboardAddr, Layout, 0x6E * 2, nullptr);
-            Enabling = true;
-        }
-        else if(KeyboardAddr == 0)
-		{
-            Enabling = false;
+					//Start Keyboard 2
+					SymbolID
+				};
+				KeyboardAddr = KeyboardAddr - 0xA8A; //Address
+            	Process::Patch(KeyboardAddr, Layout, 0x6E * 2, nullptr);
+            	Enabling = true;
+        	}
+        	else if(KeyboardAddr == 0)
+            	Enabling = false;
         }
     }
 
@@ -2543,7 +2544,11 @@ namespace CTRPluginFramework
 
 	void	SetFOV(MenuEntry *entry)
 	{
-		SetUpKB("Entre une ID:", false, 2, FloatFov, FloatFov);
+		float SetFloatFov;
+		SetUpKB("Entre une ID:" << Color::Lime << "\nFloat: 0.69~1.00", false, 4, SetFloatFov, FloatFov);
+
+		if(SetFloatFov >= 0.69 && SetFloatFov <= 1.0)
+			FloatFov = SetFloatFov;
 	}
 
 	void	TownBGMModifier(MenuEntry *entry)
