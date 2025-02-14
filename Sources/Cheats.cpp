@@ -56,7 +56,8 @@ namespace CTRPluginFramework
 	
 	std::string ShowT_AcreID[5][7] = {""};
 	std::string ShowI_AcreID[4][4] = {""};
-	static constexpr u8 Addage[5] = {0x7, 0xE, 0x15, 0x1C, 0x23};
+	static constexpr u8 TownAddage[5] = {0x7, 0xE, 0x15, 0x1C, 0x23};
+	static constexpr u8 IslandAddage[4] = {0, 0x4, 0x8, 0xC};
 	static constexpr u16 TownArceID_XPos[7] = {43, 79, 115, 151, 187, 223, 259};
 	static constexpr u8 TownArceID_YPos[5] = {52, 88, 124, 160, 196};
 	static constexpr u8 TownRect_XPos[7] = {34, 70, 106, 142, 178, 214, 250};
@@ -1067,21 +1068,21 @@ namespace CTRPluginFramework
     void	Trampler(MenuEntry *entry)
 	{
 		static bool Enabling = false;
-		static const u32 addresses[7] = {0x64E4D4, 0x597F38, 0x597F58, USA_NoBreakFlowers_Address, 0x597FA0, 0x597FE8, 0x597FAC};
-        static const u32 original[7] = {0x0A000032, 0x0A000056, 0xEBF5935C, 0xE3A0801D, 0x1A00003C, 0x0A00002A, 0x0A000039};
-        static const u32 patch[7] = {0xE1A00000, 0xE1A00000, 0xE3A0001D, 0x0A00004B, 0xE1A00000, 0xE1A00000, 0xE1A00000};
+		static const u32 addresses[6] = {0x64E4D4, 0x597F38, USA_NoBreakFlowers_Address, 0x597FA0, 0x597FE8, 0x597FAC};
+        static const u32 original[6] = {0x0A000032, 0x0A000056, 0xE3A0801D, 0x1A00003C, 0x0A00002A, 0x0A000039};
+        static const u32 patch[6] = {0xE1A00000, 0xE1A00000, 0xE1A00000, 0xE1A00000, 0xE1A00000, 0xE1A00000};
 		if(entry->Hotkeys[0].IsPressed())
 		{
 			Enabling = !Enabling;
 			OSD::Notify("Trampler:" + (Enabling ? Color::Green << "ON" : Color::Red << "OFF"));
-			for(u8 i = 0; i < 7; i++) 
+			for(u8 i = 0; i < 6; i++) 
 			{
 				Enabling ? Process::Write32(addresses[i], patch[i]) : Process::Write32(addresses[i], original[i]);
 			}
 		}
 		if(!entry->IsActivated())
 		{
-			for(u8 i = 0; i < 7; i++) 
+			for(u8 i = 0; i < 6; i++) 
 			{
 				Process::Write32(addresses[i], original[i]);
 			}
@@ -1656,7 +1657,7 @@ namespace CTRPluginFramework
 					{
 						for(u8 i = 0; i < 7; i++)
 						{
-							ShowT_AcreID[j][i] = (Utils::Format("%02X", Town->TownAcres[Addage[j] + i]));
+							ShowT_AcreID[j][i] = (Utils::Format("%02X", Town->TownAcres[TownAddage[j] + i]));
 							screen.DrawSysfont(ShowT_AcreID[j][i], TownArceID_XPos[i], TownArceID_YPos[j], Color::Black);
 							screen.DrawRect(TownRect_XPos[i], TownRect_YPos[j], 36, 36, Color::Black, false);
 						}
@@ -1667,7 +1668,7 @@ namespace CTRPluginFramework
 					{
 						for(u8 i = 0; i < 4; i++)
 						{
-							ShowI_AcreID[j][i] = (Utils::Format("%02X", Town->IslandAcres[(j + i)])); //need changes
+							ShowI_AcreID[j][i] = (Utils::Format("%02X", Town->IslandAcres[IslandAddage[j] + i])); //need changes
 							screen.DrawSysfont(ShowI_AcreID[j][i], IslandArceID_XPos[i], IslandArceID_YPos[j], Color::Black);
 							screen.DrawRect(IslandRect_XPos[i], IslandRect_YPos[j], 43, 43, Color::Black, false);
 						}
@@ -1704,7 +1705,7 @@ namespace CTRPluginFramework
 							if(!SetUpKBNo(Color::Lime << Utils::Format("Acre selected:%d", Acre) << Color::White << " | " << Color::Magenta << "Acre ID:" << ShowT_AcreID[j][i], true, 2, AcreID))
 								return;
 							
-							Town->TownAcres[Addage[j] + i] = AcreID;
+							Town->TownAcres[TownAddage[j] + i] = AcreID;
 							OSD::Notify("Save and quit your game to see your changes!");
 						}
 					}
