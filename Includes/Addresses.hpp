@@ -13,6 +13,7 @@ namespace CTRPluginFramework
 	static const u32 USA_WorldCoordinates_Function = 0x5C13AC;
 	static const u32 EUR_WorldCoordinates_Function = 0x5C03F4;
 	static const u32 USA_AnimationInstance_Function = 0x6576F8;
+	static const u32 EUR_AnimationInstance_Function = 0x656730;
 	static const u32 USA_Animation_Function = 0x64DB90;
 	static const u32 EUR_Animation_Function = 0x64CBC8;
 	static const u32 USA_Pickup_Function = 0x661524;
@@ -71,6 +72,8 @@ namespace CTRPluginFramework
 	static const u32 EUR_PlayerSave_Pointer = 0x2FEBB4;
 	static const u32 USA_Game_Pointer = 0x954648;
 	static const u32 EUR_Game_Pointer = 0x953648;
+	static const u32 USA_GardenPlus_Pointer = 0x2FB344;
+	static const u32 EUR_GardenPlus_Pointer = 0x2FB340;
 	static const u32 USA_Location_Pointer = 0x1E890C;
 	static const u32 EUR_Location_Pointer = 0x1E892C;
 	static const u32 USA_Inventory_Pointer = 0x9509EC;
@@ -98,6 +101,7 @@ namespace CTRPluginFramework
 	static const u32 USA_OnlineInventory1_Address = 0xA8C360;
 	static const u32 USA_OnlineInventory2_Address = 0xA967E0;
 	static const u32 USA_OnlineInventory3_Address = 0xAA0C60;
+	static const u32 USA_Outfit_Address = 0x31F2702A; //0x3307770, 0x33077CDC
 	static const u32 USA_ActualRoom_Address = 0x94F4C5;
 	static const u32 USA_RoomID_Address = 0x958342;
 	static const u32 USA_Island_Address = 0x301DC290;

@@ -324,8 +324,15 @@ namespace CTRPluginFramework
 		{ "Amiibo Camera", 0xA4 }
 	};
 
-	const ID_Data Musics[1] =
+	const ID_Data OutdoorMusics[256] =
 	{
-		{ "", 0 },
+		{ "Title Theme", 0 },
+		{ "Talking to isabelle", 1 },
+		{ "House showcase place?", 2 },
+		{ "First arrive to town", 3 },
+		{ "First walking out of the train station", 4 },
+		{ "Villager banter sounds", 5 },
+		{ "Villager banter sounds", 6 },
+		{ "Villager banter sounds", 7 },
 	};
 }

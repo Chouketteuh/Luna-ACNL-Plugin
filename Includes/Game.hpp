@@ -2,44 +2,17 @@
 #define GAME_HPP
 
 #include "CTRPluginFramework.hpp"
-#include "RAddress.hpp"
+#include "RegionAddress.hpp"
 #include "Addresses.hpp"
+#include "Structs.hpp"
 #include "Wrappers.hpp"
 #include "Strings.hpp"
 
 namespace CTRPluginFramework
 {
-    using StringVector = std::vector<std::string>;
-    using vec8 = std::vector<u8>;
-    using vec16 = std::vector<u16>;
-    using vec32 = std::vector<u32>;
-    using vec64 = std::vector<u64>;
-
-    struct ID_Data 
-    {
-		const char* Name; //name of ID
-		u8 ID; //ID
-	};
-
     extern const ID_Data Buildings[205];
     extern const ID_Data Rooms[109];
-    extern const ID_Data Musics[1];
-
-    struct PACKED Coordinates
-    {
-        float x;
-        float y;
-        float z;
-    };
-
-    struct TramplePkt 
-    {
-		u32 Item;
-		u8 RoomID;
-		u8 worldX;
-		u8 worldY;
-		u8 u0;
-	};
+    extern const ID_Data OutdoorMusics[256];
 
 	class Player
     {
@@ -104,7 +77,7 @@ namespace CTRPluginFramework
         static void			    ReloadRoom(float *coords = Player::GetCoordinates());
         static void             AskReloadRoom(void);
         static u32 			    GetRoomData();
-        static float*           WorldCoordsToCoords(u8 pIndex, u8 wX, u8 wY, float res[3]);
+        static float*           WorldCoordsToCoords(u8 wX, u8 wY, float res[3], u8 PlayerIndex = Player::GetActualPlayerIndex());
         static u8               GetOnlinePlayerCount();
         static u32              GetCurrentMap();
         static vec32            GetMapItems(bool Include7FFE = false, u8 WorldX = 0, u8 WorldY = 0, u8 Width = 0xFF, u8 Length = 0xFF);
@@ -118,6 +91,7 @@ namespace CTRPluginFramework
         static void             OpenCatalog();
         static void             GiveItemFunction(u32 InvData);
 
+        static TownSaveData*    GetTownSaveData(void);
         static void             PlaceBuildingUpdateCollisions(u32 x, u32 y, u16 BuildingID);
         static void             PlaceBuilding();
         static void             MoveBuilding();
@@ -137,7 +111,7 @@ namespace CTRPluginFramework
         static u32              GetLockedSpotIndex(u8 wX, u8 wZ, u8 RoomID = 0xA5);
         static void			    ClearLockedSpot(u8 wX, u8 wY, u8 RoomID, u32 param_4 = 4);
     };
-
+    
     class Animation
 	{
     public:
@@ -166,6 +140,7 @@ namespace CTRPluginFramework
     class IDList
 	{
     public:
+        static bool             ValidIDFloat(float ID, float StardID, float EndID);
         static bool             ValidID32(u32 ID, u32 StardID, u32 EndID);
         static bool             ValidID16(u16 ID, u16 StardID, u16 EndID);
         static bool             ValidID8(u8 ID, u8 StardID, u8 EndID);
@@ -183,7 +158,7 @@ namespace CTRPluginFramework
 
         static std::string      GetRoomName(u8 ID);
         static std::string      GetBuildingName(u8 ID);
-        static std::string      GetMusicName(u8 ID);
+        static std::string      GetOutdoorMusicName(u8 ID);
 	};
 
     class Camera

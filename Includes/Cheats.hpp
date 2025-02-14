@@ -4,7 +4,6 @@
 #include "Game.hpp"
 #include "unicode.h"
 #include <ostream>
-#include <sstream>
 #include <cmath>
 #include <algorithm>
 #include <unordered_set>
@@ -34,6 +33,7 @@ namespace CTRPluginFramework
     void	SetSeeders(MenuEntry *entry);
 	void	OptionSetSeeders(MenuEntry *entry);
     void    TouchDrop(MenuEntry *entry);
+    void	OptionTouchDrop(MenuEntry *entry);
     void    AutoDrop(MenuEntry *entry);
     void    DropModifier(MenuEntry *entry);
     void    OptionDropModifier(MenuEntry *entry);
@@ -41,6 +41,7 @@ namespace CTRPluginFramework
     void    MapEditor(MenuEntry *entry);
     void	Trampler(MenuEntry *entry);
     void	CatalogToPockets(MenuEntry *entry);
+    void	DropAndDigAnywhere(MenuEntry *entry);
 
     /*Animations Codes*/
     void	Idle(MenuEntry *entry);
@@ -52,7 +53,7 @@ namespace CTRPluginFramework
 
     /*Environnement Codes*/
     void	BuildingMod(MenuEntry *entry);
-    // Town Acres Editor
+    void	AcresEditor(MenuEntry *entry);
     void    WeatherMod(MenuEntry *entry);
     void	SeasonMod(MenuEntry *entry);
     void	FestivalMod(MenuEntry *entry);
