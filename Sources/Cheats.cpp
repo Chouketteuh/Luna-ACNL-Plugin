@@ -1657,13 +1657,12 @@ namespace CTRPluginFramework
 					{
 						for(u8 i = 0; i < 7; i++)
 						{
-							ShowT_AcreID[j][i] = (Utils::Format("%02X", Town->TownAcres[TownAddage[j] + i]));
-							screen.DrawSysfont(ShowT_AcreID[j][i], TownArceID_XPos[i], TownArceID_YPos[j], Color::Black);
+							//screen.DrawSysfont(ShowT_AcreID[j][i], TownArceID_XPos[i], TownArceID_YPos[j], Color::Black); // Show ID, cause some lags
 							screen.DrawRect(TownRect_XPos[i], TownRect_YPos[j], 36, 36, Color::Black, false);
 						}
 					}
 					break;
-				/*case 0x68:
+				case 0x68:
 					for(u8 j = 0; j < 4; j++)
 					{
 						for(u8 i = 0; i < 4; i++)
@@ -1672,7 +1671,7 @@ namespace CTRPluginFramework
 							screen.DrawSysfont(ShowI_AcreID[j][i], IslandArceID_XPos[i], IslandArceID_YPos[j], Color::Black);
 							screen.DrawRect(IslandRect_XPos[i], IslandRect_YPos[j], 43, 43, Color::Black, false);
 						}
-					}*/
+					}
 					break;
 				default:
 					break;
@@ -1684,7 +1683,7 @@ namespace CTRPluginFramework
 	void	AcresEditor(MenuEntry *entry)
 	{
 		TownSaveData *Town = Game::GetTownSaveData();
-		if(Game::MapBool() && Touch::IsDown() && Town && (Game::GetOnlinePlayerCount() == 0))
+		if(Game::MapBool() && Controller::IsKeyPressed(Key::Touchpad) && Town && (Game::GetOnlinePlayerCount() == 0))
 		{
 			u8 Acre = 0;
 
@@ -1702,6 +1701,7 @@ namespace CTRPluginFramework
 								continue;
 
 							u8 AcreID = 0;
+							ShowT_AcreID[j][i] = (Utils::Format("%02X", Town->TownAcres[TownAddage[j] + i]));
 							if(!SetUpKBNo(Color::Lime << Utils::Format("Acre selected:%d", Acre) << Color::White << " | " << Color::Magenta << "Acre ID:" << ShowT_AcreID[j][i], true, 2, AcreID))
 								return;
 							
@@ -2931,8 +2931,9 @@ namespace CTRPluginFramework
 			if(Player::InLoadingState() || MapEditorActive || AnimExecuting)
 				return;
 
+			std::string OutFitsFolder = "Luna/Outfits";
 			Directory Luna("Luna", true); // Create the directory if it doesn't exist
-			Directory dir("Luna/Outfits", true); // Create the directory if it doesn't exist
+			Directory dir(OutFitsFolder, true); // Create the directory if it doesn't exist
 			
 			s8 uchoice = OpenList(Color::Yellow << "Magic Wand ACNH", OutfitsOpt);
 			switch(uchoice)
@@ -2961,29 +2962,15 @@ namespace CTRPluginFramework
 						dir.ListFiles(FileExist, ".txt"); // Read all .txt inside the folder
 
 						// If .txt savefile doesnt exist
-						if(!File::Exists("Luna/Outfits/" + FileExist[0]))
+						if(!File::Exists(OutFitsFolder + "/Outfits.txt"))
 						{
-							if(dir.OpenFile(OutfitSave, "outfits.txt", File::RWC) == 0)
-							{
-								OutfitSave.Close();
-								OSD::Notify(Color::Blue << "Creating a new savefile...");
-								Sleep(Milliseconds(500));
-								MessageBox("Created file at:\n" << Color::Yellow << "Luna/Outfits/outfits.txt").SetClear(ClearScreen::Top)();
-							}
-							else
-							{
-								MessageBox(Color::Red << "Error", "Failed to create the file!")();
-								break;
-							}
+							OSD::Notify(Color::DeepSkyBlue << "Creating a new savefile...");
+							File::Create("Luna/Outfits/Outfits.txt");
+							Sleep(Milliseconds(500));
 						}
 
-						// Have to double check
-						StringVector OutFitsList;
-						Directory OutFitsFolder("Luna/Outfits", true);
-						OutFitsFolder.ListFiles(OutFitsList, ".txt"); // Read all .txt inside the folder
-
 						// Open savefile in APPEND mode to go at the end
-						if(OutFitsFolder.OpenFile(OutfitSave, OutFitsList[0], File::WRITE | File::APPEND) == 0)
+						if(File::Open(OutfitSave, OutFitsFolder + "/Outfits.txt", File::RWC | File::APPEND) == 0)
 						{
 							std::string line = Utils::Format("\n//\nName: %s\n0x%04X\n0x%04X\n0x%04X\n0x%04X\n0x%04X\n0x%04X",
 								OutfitName.c_str(), // Convert "std::string" in "const char*"
@@ -3022,7 +3009,7 @@ namespace CTRPluginFramework
 					File OutfitRestore;
 
 					// Open savefile in READ mode
-					if(dir.OpenFile(OutfitRestore, OutFitsList[0], File::READ) == 0)
+					if(File::Open(OutfitRestore, OutFitsFolder + "/Outfits.txt", File::READ) == 0)
 					{
 						// Get size of the file
 						u64 FileSize = OutfitRestore.GetSize();
@@ -3081,7 +3068,11 @@ namespace CTRPluginFramework
 							PlayerOutfit.push_back(ReadedOutfit);
 						}
 					}
-					else break;
+					else
+					{
+						MessageBox(Color::Red << "Error", "\"Outfits.txt\" not found!")();
+						break;
+					}
 
 					if(PlayerOutfit.empty())
 					{
@@ -3099,7 +3090,7 @@ namespace CTRPluginFramework
 					if(OutfitChoice < 0)
 						break;
 				
-					if (PlayerOutfit[OutfitChoice].OutfitPiece.size() == 6)
+					if(PlayerOutfit[OutfitChoice].OutfitPiece.size() == 6) // If there are 6 cloth pieces in the saved outfit.
 					{
 						Player::SetOutfit(PlayerOutfit[OutfitChoice].OutfitPiece[0], PlayerOutfit[OutfitChoice].OutfitPiece[1], PlayerOutfit[OutfitChoice].OutfitPiece[2], PlayerOutfit[OutfitChoice].OutfitPiece[3], PlayerOutfit[OutfitChoice].OutfitPiece[4], PlayerOutfit[OutfitChoice].OutfitPiece[5]);
 						OSD::Notify("Outfit applied ->" << Color::Lime << OutfitsList[OutfitChoice]);
