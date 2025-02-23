@@ -144,6 +144,8 @@ namespace CTRPluginFramework
 	static const u32 USA_GrassEnd_Address = 0x31F8307F;
 	static const u32 USA_Shop_Address = 0x31F891E4;
 	static const u32 EUR_Shop_Address = 0x31F60E64;
+	static const u32 USA_Building_Address = 0x31F72E08;
+	static const u32 EUR_Building_Address = 0x31F4AA88;
 	static const u32 USA_Tan_Address = 0x31F27028;
 	static const u32 EUR_Tan_Address = 0x31EFECA8;
 	static const u32 USA_Gender_Address = 0x31F2C5DA;
@@ -190,6 +192,7 @@ namespace CTRPluginFramework
 	static const u32 EUR_CollisionOut_Address = 0x3304F1B4;
 	static const u32 USA_CollisionIn_Address = 0x33077663;
 	static const u32 EUR_CollisionIn_Address = 0x3304F2E3;
+	static const u32 USA_Gravity_Address = 0x33077537;
 
 	static const u32 USA_Wallet_Address = 0x31F2DF28;
 	static const u32 USA_OnlineWallet0_Address = 0xAAB418;

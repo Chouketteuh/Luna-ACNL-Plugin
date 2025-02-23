@@ -2,6 +2,7 @@
 #define GAME_HPP
 
 #include "CTRPluginFramework.hpp"
+#include "CTRPluginFrameworkImpl.hpp"
 #include "RegionAddress.hpp"
 #include "Addresses.hpp"
 #include "Structs.hpp"
@@ -10,6 +11,9 @@
 
 namespace CTRPluginFramework
 {
+    using NPCdataVector = std::vector<NPCdata>;
+    using OutfitVector = std::vector<Outfit>;
+
     extern const ID_Data Buildings[205];
     extern const ID_Data Rooms[109];
     extern const ID_Data OutdoorMusics[256];
@@ -80,7 +84,7 @@ namespace CTRPluginFramework
         static float*           WorldCoordsToCoords(u8 wX, u8 wY, float res[3], u8 PlayerIndex = Player::GetActualPlayerIndex());
         static u8               GetOnlinePlayerCount();
         static u32              GetCurrentMap();
-        static vec32            GetMapItems(bool Include7FFE = false, u8 WorldX = 0, u8 WorldY = 0, u8 Width = 0xFF, u8 Length = 0xFF);
+        static u32Vector        GetMapItems(bool Include7FFE = false, u8 WorldX = 0, u8 WorldY = 0, u8 Width = 0xFF, u8 Length = 0xFF);
 		static u32              GetMapItemsCount(bool Include7FFE = false, u8 WorldX = 0, u8 WorldY = 0, u8 Width = 0xFF, u8 Length = 0xFF);
 
         static void             AppendCoordData(u32 AnimInst, u32 pos, float *Coord);
@@ -130,12 +134,25 @@ namespace CTRPluginFramework
         static u8               GetCursorPosition(bool OnTheLeft = true);
         static bool             IsHighlighted(void);
         static u8               GetCharactersCount(void);
-        static vec16            GetHighlightedCharacters(void);
+        static u16Vector        GetHighlightedCharacters(void);
         static void             SendMessage(void);
         static void             WriteCharacter(u16 Character, u8 Position = 25);
         static void             MoveCursor(u8 Position1 = 0, u8 Position2 = 0, bool IsNotHighlighted = true);
         static void             PopCharacterBack(bool NoSound = false);
 	};
+
+    class NPC
+    {
+    public:
+        static u32              GetData(u16 ID, int count = -1);
+        static std::string      GetSPName(u8 SPVID);
+        static std::string      GetNName(u16 VID);
+        static u8               GetSPVID(u32 npcData);
+        static u16              GetVID(u32 npcData);
+        static u32              GetPlayerSave(u32 npcData);
+        static void             GetLoadedNPC(NPCdataVector &vec);
+        static void             AnimationExecuter(u8 Mode, u32 Address, u8 Anim, u16 Tool, u16 Snake, u8 Emotion);
+    };
 
     class IDList
 	{

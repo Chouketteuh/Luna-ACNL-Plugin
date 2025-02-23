@@ -2,7 +2,6 @@
 #define STRINGS_HPP
 
 #include "CTRPluginFramework.hpp"
-#include <sstream>
 #include <vector>
 #include <cstdio>
 #include <cstring>
@@ -11,13 +10,13 @@
 
 namespace CTRPluginFramework
 {
-    std::string     Hex(u8 x);
-    std::string     Hex(u16 x);
-    std::string     Hex(u32 x);
-    std::string     Hex(u64 x);
-    std::string     Hex(float x);
-    std::string     Hex(double x);
-    bool ReadLine(CTRPluginFramework::File& file, std::string& line);
+    std::string	Hex(u8 x);
+    std::string	Hex(u16 x);
+    std::string	Hex(u32 x);
+    std::string	Hex(u64 x);
+    std::string	Hex(float x);
+    std::string	Hex(double x);
+    std::string	ReadWholeTxtFile(std::string Filepath);
 }
 
 #endif

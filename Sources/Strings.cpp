@@ -50,18 +50,14 @@ namespace CTRPluginFramework
         return (std::string(buffer));
     }
 
-    bool ReadLine(CTRPluginFramework::File& file, std::string& line)
+    // Function to read the entire text file
+    std::string ReadWholeTxtFile(std::string Filepath)
     {
-        line.clear();
-        char ch;
-
-        while(file.Read(&ch, 1) == 1)
-        {
-            if(ch == '\n')
-                return true;
-            line += ch;
-        }
-
-        return !line.empty();
+        File file(Filepath.c_str());
+        char* buf = static_cast<char*>(::operator new(file.GetSize()));
+        file.Read(buf, file.GetSize());
+        std::string out(buf, file.GetSize());
+        ::operator delete(buf);
+        return out;
     }
 }

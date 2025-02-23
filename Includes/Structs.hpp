@@ -7,11 +7,11 @@
 namespace CTRPluginFramework
 {
     using StringVector = std::vector<std::string>;
-    using vecchar = std::vector<char>;
-    using vec8 = std::vector<u8>;
-    using vec16 = std::vector<u16>;
-    using vec32 = std::vector<u32>;
-    using vec64 = std::vector<u64>;
+    using CharVector = std::vector<char>;
+    using u8Vector = std::vector<u8>;
+    using u16Vector = std::vector<u16>;
+    using u32Vector = std::vector<u32>;
+    using u64Vector = std::vector<u64>;
     
     struct ID_Data 
     {
@@ -43,7 +43,13 @@ namespace CTRPluginFramework
     struct Outfit
     {
         std::string Name;  // Outfit name
-        vec16 OutfitPiece; // Each piece of the player’s outfit
+        u16Vector OutfitPiece; // Each piece of the player’s outfit
+    };
+
+    struct NPCdata
+    {
+        std::string name;
+        u32 data;
     };
 
     struct Mannequin

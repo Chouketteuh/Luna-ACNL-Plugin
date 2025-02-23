@@ -43,6 +43,7 @@ namespace CTRPluginFramework
 	const std::string AnimModNote = "Select your animation with the\nanimation selector,\nthen execute it with (Execution Key)\n\n" + TurboNote << Color::White;
 	const std::string ForceAnimationsToOthersNote = "Force on everyone:" << Color::DeepSkyBlue << "\n-Animations\n-Moonjump\n-Restore movements (Idle)\n\n" + TurboNote << Color::White;
 	const std::string OnlineIslandModelNote = " If you want this cheat working " << Color::White << "\n\n-Enable it before going to the online island\n-Require to be the host\n(The one with the chat bar in " << Color::Blue << "BLUE" << Color::White << ")";
+	const std::string ChatSpamNote = "Let you spam the last message you sended!" << Color::Yellow << "Cannot be used with \"Keyboard Extender\".";
 
     #define MAJOR_VERSION		2
 	#define MINOR_VERSION		0
@@ -52,8 +53,7 @@ namespace CTRPluginFramework
 	#define STRING_VERSION		"[" TOSTRING(MAJOR_VERSION) "." TOSTRING(MINOR_VERSION) "." TOSTRING(REVISION_VERSION) "]"
     static const std::string	PluginName = "" << Color::Magenta << "UN" << Color::Purple << " CN PUGIN";
     static const std::string	Credits =
-		"LUNA ACNL PLUGIN - Version" STRING_VERSION "\n\n"
-		"Last update:28/07/24\n"
+		"LUNA ACNL PLUGIN - Version" STRING_VERSION "\n"
 		"Creation date:26/04/19\n\n"
 		" Credits \n"
 		" Thib:Creator of this plugin.\n"
@@ -104,7 +104,7 @@ namespace CTRPluginFramework
 	// Useful to save settings, undo patchs or clean up things
 	void	OnProcessExit(void)
 	{
-		
+		ToggleTouchscreenForceOn();
 	}
 
 	static const std::string	UnsupportedVersion = "" << Color::Red << "INVALID " << Color::White << "Version\n\nUpdate to: " << Color::Green << "ver. 1.5";
@@ -191,7 +191,7 @@ namespace CTRPluginFramework
 			MovementsFolder->Append(EntryWithHotkey(new MenuEntry(Color::Red << " Coordinates Modifier", CoordinateModifier, SetCoordSpeed),{Hotkey(Key::A | Key::DPadUp, Color::Yellow << "Up"), Hotkey(Key::A | Key::DPadDown, "Down"), Hotkey(Key::A | Key::DPadLeft, "Left"), Hotkey(Key::A | Key::DPadRight, "Right")})),
 			MovementsFolder->Append(new MenuEntry(Color::Orange << " Coordinates Modifier: ", TouchCoordinates)),
 			MovementsFolder->Append(EntryWithHotkey(new MenuEntry(Color::Yellow << " Walk Over Things", WalkOverThings, ""),{Hotkey(Key::L | Key::DPadDown, OnOffNote)})),
-			MovementsFolder->Append(EntryWithHotkey(new MenuEntry(Color::LimeGreen << " Moon Jump", MoonJump, ""),{Hotkey(Key::L | Key::DPadUp, Color::Yellow << "Moon Jump")})),
+			MovementsFolder->Append(EntryWithHotkey(new MenuEntry(Color::LimeGreen << " Moon Jump", MoonJump, OptionMoonJump, ""),{Hotkey(Key::L | Key::DPadUp, Color::Yellow << "Moon Jump Up"), Hotkey(Key::L | Key::DPadDown, "Moon Jump Down")})),
 			MovementsFolder->Append(EntryWithHotkey(new MenuEntry(Color::Turquoise << " Speed Hack", SpeedHack),{Hotkey(Key::B, Color::Yellow << "Sonic")})),
 			MovementsFolder->Append(EntryWithHotkey(new MenuEntry(Color::DeepSkyBlue << " Movement Changer", MovementChanger, ""),{Hotkey(Key::L | Key::DPadLeft, SelectModeNote)})),
 			MovementsFolder->Append(EntryWithHotkey(new MenuEntry(Color::Purple << " Room Warping", RoomMod, ""),{Hotkey(Key::L | Key::X, Color::Yellow << "Set ID")})),
@@ -205,7 +205,7 @@ namespace CTRPluginFramework
 			ItemsFolder->Append(new MenuEntry(Color::Orange << " Touch Drop: ", TouchDrop, OptionTouchDrop, TouchDropNote)), // add particles?
 			ItemsFolder->Append(EntryWithHotkey(new MenuEntry(Color::Yellow << " Auto Drop", AutoDrop),{Hotkey(Key::B | Key::DPadLeft, OnOffNote)})),
 			ItemsFolder->Append(EntryWithHotkey(new MenuEntry(Color::LimeGreen << " Drop Modifier", DropModifier, OptionDropModifier, ""),{Hotkey(Key::X | Key::DPadUp, SelectModeNote)})),
-			ItemsFolder->Append(EntryWithHotkey(new MenuEntry(Color::Turquoise << " PickUp Mod", PickUpMod, TurboNote << Color::White),{Hotkey(Key::L | Key::B, SelectModeNote), Hotkey(Key::R | Key::B, OnOffNote)})),
+			ItemsFolder->Append(EntryWithHotkey(new MenuEntry(Color::Turquoise << " PickUp Mod", PickUpMod, TurboNote << Color::White),{Hotkey(Key::L | Key::B, SelectModeNote), Hotkey(Key::R | Key::B, OnOffNote + " PickUp Mod"), Hotkey(Key::Y | Key::Start, OnOffNote + " Auto PickUp")})),
 			ItemsFolder->Append(EntryWithHotkey(new MenuEntry(Color::DeepSkyBlue << " Map Editor" + Crash, MapEditor),{Hotkey(Key::Start | Key::DPadUp, OnOffNote)})),
 			ItemsFolder->Append(EntryWithHotkey(new MenuEntry(Color::Magenta << " Trampler", Trampler),{Hotkey(Key::L | Key::DPadRight, OnOffNote)})),
 			ItemsFolder->Append(new MenuEntry(Color::Purple << " Sets drop" + Soon, nullptr)), // soon
@@ -225,9 +225,9 @@ namespace CTRPluginFramework
 			AnimationsFolder->Append(new MenuEntry(Color::DeepSkyBlue << " Anti Animation", AntiAnimation)),
 			AnimationsFolder->Append(new MenuFolder(Color::Magenta << "NPCs Animations", "",
         	{
-            	new MenuEntry(Color::Red << "NPCs Animations Menu", nullptr), // soon
-				new MenuEntry(Color::Orange << "NPCs Coordinates", nullptr), // soon
-				new MenuEntry(Color::Yellow << "NPCs Animations Executer", nullptr), // soon
+            	EntryWithHotkey(new MenuEntry(Color::Red << " NPCs Menu", NPCMenu),{Hotkey(Key::Y | Key::DPadDown, MenuNote)}),
+				EntryWithHotkey(new MenuEntry(Color::Orange << " NPCs Animations Executer", NPCAnimationExecuter),{Hotkey(Key::Y | Key::B, Color::Yellow << "Execute animation")}),
+				EntryWithHotkey(new MenuEntry(Color::Yellow << " NPCs Coordinates Modifier", NPCCoordinates, SetNPCCoordSpeed),{Hotkey(Key::Start | Key::DPadUp, Color::Yellow << "Up"), Hotkey(Key::Start | Key::DPadDown, "Down"), Hotkey(Key::Start | Key::DPadLeft, "Left"), Hotkey(Key::Start | Key::DPadRight, "Right")})
 			}));
 
 			menu.Append(AnimationsFolder);
@@ -275,21 +275,22 @@ namespace CTRPluginFramework
 			KeyboardChatFolder->Append(new MenuEntry(Color::LimeGreen << " Unlock \"@\" and \"Enter\"", UnlockCaracters)),
 			KeyboardChatFolder->Append(new MenuEntry(Color::Turquoise << " Keyboard Extender", KeyboardExtender)),
 			KeyboardChatFolder->Append(new MenuEntry(Color::DeepSkyBlue << " Custom Keyboard", CustomKeyboard, SetSymbolCustomKeyboard)),
-			KeyboardChatFolder->Append(EntryWithHotkey(new MenuEntry(Color::Magenta << " Spamming Sended Chat" + Crash, nullptr),{Hotkey(Key::R, Color::Yellow << "Spam")})), //NEED FIX
+			KeyboardChatFolder->Append(EntryWithHotkey(new MenuEntry(Color::Magenta << " Spamming Sended Chat", ChatSpam, ChatSpamNote),{Hotkey(Key::R, Color::Yellow << "Spam")})), //NEED FIX
 
 			menu.Append(KeyboardChatFolder);
 		}
 
 		VisualSoundsFolder = new MenuFolder(Color::Orange << "Visual & Sounds");
 		{
-			VisualSoundsFolder->Append(new MenuEntry(Color::Red << " Game Speed", GameSpeed)),
-			VisualSoundsFolder->Append(new MenuEntry(Color::Orange << " Fast Talk NPC", FastTalkNPC)),
-			VisualSoundsFolder->Append(new MenuEntry(Color::Yellow << " FOV Modifier", ChangeFOV, SetFOV)),
-			VisualSoundsFolder->Append(new MenuEntry(Color::LimeGreen << " Town BGM Modifier", nullptr, TownBGMModifier)),
-			VisualSoundsFolder->Append(new MenuEntry(Color::Turquoise << " Island Hut BGM Modifier", nullptr, IslandHutBGMModifier, ReloadNote)),
-			VisualSoundsFolder->Append(new MenuEntry(Color::DeepSkyBlue << " Always Cherry Blossom Trees", AlwaysCherryBlossomTrees, ReloadNote)),
-			VisualSoundsFolder->Append(new MenuEntry(Color::Magenta << " Disable L + R Screenshots", DisableScreenshots)),
-			VisualSoundsFolder->Append(new MenuEntry(Color::Purple << " Camera Mod" + Soon, nullptr)),
+			VisualSoundsFolder->Append(new MenuEntry(Color::Red << " Effects Mod" + Soon, nullptr)),
+			VisualSoundsFolder->Append(new MenuEntry(Color::Orange << " Camera Mod" + Soon, nullptr)),
+			VisualSoundsFolder->Append(new MenuEntry(Color::Yellow << " Disable L + R Screenshots", DisableScreenshots)),
+			VisualSoundsFolder->Append(new MenuEntry(Color::LimeGreen << " FOV Modifier", ChangeFOV, SetFOV)),
+			VisualSoundsFolder->Append(new MenuEntry(Color::Turquoise << " Game Speed", GameSpeed)),
+			VisualSoundsFolder->Append(new MenuEntry(Color::DeepSkyBlue << " Fast Talk NPC", FastTalkNPC)),
+			VisualSoundsFolder->Append(new MenuEntry(Color::Magenta << " Always Cherry Blossom Trees", AlwaysCherryBlossomTrees, ReloadNote)),
+			VisualSoundsFolder->Append(new MenuEntry(Color::Purple << " Town BGM Modifier", nullptr, TownBGMModifier)),
+			VisualSoundsFolder->Append(new MenuEntry(Color::Red << " Island Hut BGM Modifier", nullptr, IslandHutBGMModifier, ReloadNote)),
 
 			menu.Append(VisualSoundsFolder);
 		}
@@ -341,6 +342,8 @@ namespace CTRPluginFramework
 		{
 			DevFolder->Append(EntryWithHotkey(new MenuEntry(Color::Lime << " Address Test", AddressTest),{Hotkey(Key::Start | Key::DPadLeft, Color::Yellow << "Set Address"), Hotkey(Key::Start | Key::DPadDown, "Read Address"), Hotkey(Key::Start | Key::DPadRight, "Display"), Hotkey(Key::Start | Key::X, "Write Address")})),
 			DevFolder->Append(EntryWithHotkey(new MenuEntry(Color::Lime << " Game Function Call", GameFuncCall),{Hotkey(Key::Start | Key::R, MenuNote)})),
+			DevFolder->Append(new MenuEntry(Color::Lime << " Get Players 3DS Friend Code", nullptr, GetFriendCodeMenu)),
+			DevFolder->Append(new MenuEntry(Color::Lime << " .png Display Keyboard Menu", nullptr, DisplayRegion)),
 
 			menu.Append(DevFolder);
 			IsFolderUsable(DevFolder, false);

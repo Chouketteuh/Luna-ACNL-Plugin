@@ -25,6 +25,7 @@ namespace CTRPluginFramework
     void    TouchCoordinates(MenuEntry *entry);
     void    WalkOverThings(MenuEntry *entry);
     void	MoonJump(MenuEntry *entry);
+    void    OptionMoonJump(MenuEntry *entry);
     void	SpeedHack(MenuEntry *entry);
     void	MovementChanger(MenuEntry *entry);
     void	RoomMod(MenuEntry *entry);
@@ -50,6 +51,10 @@ namespace CTRPluginFramework
     void    InfiniteExpression(MenuEntry *entry);
     void	SlowMotionAnim(MenuEntry *entry);
     void	AntiAnimation(MenuEntry *entry);
+    void    NPCMenu(MenuEntry *entry);
+    void    NPCAnimationExecuter(MenuEntry *entry);
+    void	NPCCoordinates(MenuEntry *entry);
+    void	SetNPCCoordSpeed(MenuEntry *entry);
 
     /*Environnement Codes*/
     void	BuildingMod(MenuEntry *entry);
@@ -85,7 +90,7 @@ namespace CTRPluginFramework
     void    KeyboardExtender(MenuEntry *entry);
     void    CustomKeyboard(MenuEntry *entry);
     void    SetSymbolCustomKeyboard(MenuEntry *entry);
-    // Spamming Sended Chat
+    void    ChatSpam(MenuEntry *entry);
 
     /*Visual & Sound Codes*/
     void    GameSpeed(MenuEntry *entry);
@@ -134,6 +139,8 @@ namespace CTRPluginFramework
     /*Dev Menu*/
     void	AddressTest(MenuEntry *entry);
     void	GameFuncCall(MenuEntry *entry);
+    void	GetFriendCodeMenu(MenuEntry *entry);
+    void	DisplayRegion(MenuEntry *entry);
 
     /*Helpers*/
     void	PlayerUpdateCallback(void);

@@ -46,8 +46,8 @@ namespace CTRPluginFramework
 				//Process::Write32(0x165580, 0xEA000010); //on other players			//0x1655A0 EUR
 		
 			// Idle After Tree Shake/Cut
-				Process::Write32(0x660600, 0xE3A01006);	//0x65F638 EUR
-				Process::Write32(0x662328, 0xE3A01006);	//0x661360 EUR
+				// Process::Write32(0x660600, 0xE3A01006);	//0x65F638 EUR
+				// Process::Write32(0x662328, 0xE3A01006);	//0x661360 EUR
 		
 			// Prevent Particle Crash
 				//Process::Write32(0x5506D4, 0xE3A0C000);								//0x54F71C EUR
@@ -570,9 +570,9 @@ namespace CTRPluginFramework
 			return (u32)Game::GetMapItems(false, WorldX, WorldY, Width, Length).size();
 	}
 
-	vec32 Game::GetMapItems(bool Include7FFE, u8 WorldX, u8 WorldY, u8 Width, u8 Length)
+	u32Vector Game::GetMapItems(bool Include7FFE, u8 WorldX, u8 WorldY, u8 Width, u8 Length)
 	{
-		vec32 Items;
+		u32Vector Items;
 
 		u8 X = WorldX, Y = WorldY;
 
@@ -674,12 +674,11 @@ namespace CTRPluginFramework
 	void	OnBuildingChange(Keyboard &k, KeyboardEvent &e) 
 	{
 		u32 TargetBuilding;
-		u32 BuildingInstance = 0x31F72E08;
 		u8 MaxBuildings = 0;
 
 		for(u8 i = 0; i < 56; i++) // 56 = Max building slots
 		{
-			TargetBuilding = BuildingInstance + (i * 4);
+			TargetBuilding = USA_Building_Address + (i * 4);
 			if(*(u8 *)(TargetBuilding) < 0xFC) // If isn't an empty slot
 				MaxBuildings++;
 		}
@@ -687,7 +686,7 @@ namespace CTRPluginFramework
 		u32 x, y;	
 		Player::GetWorldCoords(&x, &y);
 		std::string& s = k.GetInput();
-		k.GetMessage() = "Type the ID of the building you want." << Color::Lime << "\nHex: 0~FB " << Color::White << "|" << Color::Magenta << " Actual world coords: " << Utils::Format("x%02X", x) << Utils::Format("y%02X", y) << "\nBuildings: " << Utils::Format("%02X", MaxBuildings) << "/56" << Color::DeepSkyBlue << "\n\nPlacing: " << IDList::GetBuildingName(s != "" ? std::stoi(s, nullptr, 16) : 0);
+		k.GetMessage() = "Type the ID of the building you want." << Color::Lime << "\nHex: 0~FB " << Color::White << "|" << Color::Magenta << Utils::Format(" Actual world coords: x%02Xy%02X\nBuildings: %d/58", x, y, MaxBuildings) << Color::DeepSkyBlue << "\n\nPlacing: " << IDList::GetBuildingName(s != "" ? std::stoi(s, nullptr, 16) : 0);
 	}
 
 	void Game::PlaceBuilding()
@@ -703,17 +702,16 @@ namespace CTRPluginFramework
 		Player::GetWorldCoords(&x, &y);
 
 		u32 TargetBuilding;
-		u32 BuildingInstance = 0x31F72E08;
 		u8 MaxBuildings = 0;
 
-		for(u8 i = 0; i < 56; i++) // 56 = Max building slots
+		for(u8 i = 0; i < 58; i++) // 58 = Max building slots
 		{
-			TargetBuilding = BuildingInstance + (i * 4);
+			TargetBuilding = USA_Building_Address + (i * 4);
 			if(*(u8 *)(TargetBuilding) < 0xFC) // If isn't an empty slot
 				MaxBuildings++;
 		}
 
-		if(!SetUpKBNo("Type the ID of the building you want." << Color::Lime << "\nHex: 0~FB " << Color::White << "|" << Color::Magenta << " Actual world coords: " << Utils::Format("x%02X", x) << Utils::Format("y%02X", y) << "\nBuildings: " << Utils::Format("%02X", MaxBuildings) << "/56", true, 2, ID, OnBuildingChange))
+		if(!SetUpKBNo("Type the ID of the building you want." << Color::Lime << "\nHex: 0~FB " << Color::White << "|" << Color::Magenta << Utils::Format(" Actual world coords: x%02Xy%02X\nBuildings: %d/58", x, y, MaxBuildings), true, 2, ID, OnBuildingChange))
 			return;
 
 		if(!IDList::BuildingValid(ID))
@@ -743,16 +741,15 @@ namespace CTRPluginFramework
 		Player::GetWorldCoords(&x, &y);
 		
 		u32 TargetBuilding;
-		u32 BuildingInstance = 0x31F72E08;
 		u8 MaxBuildings = 0;
 
-		vec8 index;
+		u8Vector index;
 		StringVector BuildingList;
 		BuildingList.clear();
 
-		for(u8 i = 0; i < 56; i++) // 56 = Max building slots
+		for(u8 i = 0; i < 58; i++) // 58 = Max building slots
 		{
-			TargetBuilding = BuildingInstance + (i * 4);
+			TargetBuilding = USA_Building_Address + (i * 4);
 			if(*(u8 *)(TargetBuilding) < 0xFC) // If isn't an empty slot
 			{
 				// Add all avaliable buildings to a list
@@ -762,7 +759,7 @@ namespace CTRPluginFramework
 			}
 		}
 
-		Keyboard BuildingKb("Choose a building:" << Color::Magenta << "\nActual world coords: " << Utils::Format("x%02X", x) << Utils::Format("y%02X", y) << "\nBuildings: " << Utils::Format("%02X", MaxBuildings) << "/56");
+		Keyboard BuildingKb("Choose a building:" << Color::Magenta << Utils::Format("\nActual world coords: x%02Xy%02X\nBuildings: %d/58", x, y, MaxBuildings));
 
 		Sleep(Milliseconds(80));
 		
@@ -771,8 +768,8 @@ namespace CTRPluginFramework
 		if(val < 0) 
 			return;
 
-		Process::Write8(BuildingInstance + index.at(val) * 4 + 2, x & 0xFF);
-		Process::Write8(BuildingInstance + index.at(val) * 4 + 3, y & 0xFF);
+		Process::Write8(USA_Building_Address + index.at(val) * 4 + 2, x & 0xFF);
+		Process::Write8(USA_Building_Address + index.at(val) * 4 + 3, y & 0xFF);
 
 		Game::AskReloadRoom();
 	}
@@ -789,16 +786,15 @@ namespace CTRPluginFramework
 		Player::GetWorldCoords(&x, &y);
 		
 		u32 TargetBuilding;
-		u32 BuildingInstance = 0x31F72E08;
 		u8 MaxBuildings = 0;
 
-		vec8 index;
+		u8Vector index;
 		StringVector BuildingList;
 		BuildingList.clear();
 
-		for(u8 i = 0; i < 56; i++) // 56 = Max building slots
+		for(u8 i = 0; i < 58; i++) // 58 = Max building slots
 		{
-			TargetBuilding = BuildingInstance + (i * 4);
+			TargetBuilding = USA_Building_Address + (i * 4);
 			if(*(u8 *)(TargetBuilding) < 0xFC) // If isn't an empty slot
 			{
 				// Add all avaliable buildings to a list
@@ -808,7 +804,7 @@ namespace CTRPluginFramework
 			}
 		}
 
-		Keyboard BuildingKb("Choose a building:" << Color::Magenta << "\nActual world coords: " << Utils::Format("x%02X", x) << Utils::Format("y%02X", y) << "\nBuildings: " << Utils::Format("%02X", MaxBuildings) << "/56");
+		Keyboard BuildingKb("Choose a building:" << Color::Magenta << Utils::Format("\nActual world coords: x%02Xy%02X\nBuildings: %d/58", x, y, MaxBuildings));
 
 		Sleep(Milliseconds(80));
 		
@@ -817,14 +813,14 @@ namespace CTRPluginFramework
 		if(val < 0) 
 			return;
 		
-		if(!IDList::BuildingValid(BuildingInstance + index.at(val) * 4))
+		if(!IDList::BuildingValid(USA_Building_Address + index.at(val) * 4))
 		{
 			MessageBox(Color::Red << "Error", Color::White << "You cannot remove that building!")();
 			return;
 		}
 
-		Process::Write32(BuildingInstance + index.at(val) * 4, 0xFC);
-		*(u8 *)(BuildingInstance - 4) = *(u8 *)(BuildingInstance - 4) - 1;
+		Process::Write32(USA_Building_Address + index.at(val) * 4, 0xFC);
+		*(u8 *)(USA_Building_Address - 4) = *(u8 *)(USA_Building_Address - 4) - 1;
 
 		Game::AskReloadRoom();
 	}
@@ -1660,9 +1656,9 @@ namespace CTRPluginFramework
 		return (Chat::IsOpen()) ? *(u8 *)(GetChatOffset() + 0x8) : 0;
 	}
 
-	vec16 Chat::GetHighlightedCharacters(void)
+	u16Vector Chat::GetHighlightedCharacters(void)
 	{
-		vec16 HighlightedString;
+		u16Vector HighlightedString;
 
 		if(!Chat::IsOpen())
 			return HighlightedString;
@@ -1741,6 +1737,258 @@ namespace CTRPluginFramework
 		pfunction2(GetChatOffset(), NoSound);
 	}
 
+	u32 NPC::GetData(u16 ID, int count)
+	{
+		u32 point = *(u32 *)0x95D3F4; //0x95C3EC EUR
+		if(point == 0)
+			return 0;
+
+		u32 res = 0;
+		u16 val = 0;
+		u32 data = *(u32 *)(point + 0xD00C);
+		int cvar = 0;
+
+		while(res = data, res != 0)
+		{
+			data = *(u32 *)(res + 4);
+			if(*(u8 *)(*(u32 *)(res + 8) + 0xF) == 0)
+			{
+				val = *(u16 *)(*(u32 *)(res + 8) + 4);
+				if((val < 0x400) || (0x1FF < (val & 0x3FF))) 
+					val = val & 0x3FF;
+				else 
+					val = (val & 0x3FF) + 0x200;
+
+				if((*(u8 *)(val + point + 0x1102C) & 2) == 0)
+				{
+					if(*(u16 *)(res + 0xC) == ID)
+					{
+						cvar++;
+						if(count == cvar || count == -1)
+							return *(u32 *)(res + 8);
+					}
+				}
+			}
+    	}
+		return 0;
+	}
+
+	std::string NPC::GetSPName(u8 SPVID)
+	{
+		u32 Stack[44];
+		vu32(*AddStackFunction)(u32* param1);
+		Process::Write32((u32)&AddStackFunction, 0x81F9D0);
+		u32 add = AddStackFunction(Stack);
+
+		vu32(*GetSPNameFunction)(u32 param1, u32 param2, char* param3, u32 param4);
+		Process::Write32((u32)&GetSPNameFunction, 0x75D108);
+		(void)GetSPNameFunction(*(u32 *)0x95EEDC, add, (char *)"STR_SPNpc_name", SPVID);
+
+		std::string SPNPCName = "";
+		Process::ReadString(Stack[1], SPNPCName, 0x20, StringFormat::Utf16);
+		return SPNPCName.empty() ? "???" : SPNPCName;
+	}
+
+	std::string NPC::GetNName(u16 VID)
+	{
+		u32 Stack[44];
+		vu32(*AddStackFunction)(u32* param1);
+		Process::Write32((u32)&AddStackFunction, 0x81F9D0);
+		u32 add = AddStackFunction(Stack);
+
+		u32 npcModel = *(u32 *)(0xA84AF0) + VID * 0x22;
+		vu32(*GetNNameFunction)(u32 param1, u32 param2, char* param3, u32 param4);
+		Process::Write32((u32)&GetNNameFunction, 0x308210);
+		(void)GetNNameFunction(*(u32 *)0x95EEDC, add, (char *)"STR_NNpc_name", npcModel + 10);
+
+		std::string NNPCName = "";
+		Process::ReadString(Stack[1], NNPCName, 0x20, StringFormat::Utf16);
+		return NNPCName.empty() ? "???" : NNPCName;
+	}
+
+	//0x01 to 0x34
+	u8 NPC::GetSPVID(u32 npcData)
+	{
+		u32 var = *(u32 *)(npcData + 0x660);
+		var = *(u8 *)(var + 0x260);
+		return var;
+	}
+
+	u16 NPC::GetVID(u32 npcData)
+	{
+		Process::Write32((u32)&pfunction1, 0x51D288);
+		return pfunction1(npcData);
+	}
+
+	u32 NPC::GetPlayerSave(u32 npcData)
+	{
+		return *(u32 *)(npcData + 0x9AC);
+	}
+
+	void NPC::GetLoadedNPC(NPCdataVector &vec)
+	{
+		vec.clear();
+		u32 data = 0;
+		u8 SPVID = 0;
+		u16 VID = 0;
+		std::string str = "";
+		u32 save = 0;
+
+		//SPNPC
+		for(u16 i = 0x0196; i < 0x1FC; i++)
+		{
+			data = GetData(i);
+			if(data != 0)
+			{
+				SPVID = GetSPVID(data);
+				vec.push_back(NPCdata{ GetSPName(SPVID), data });
+			}
+		}
+
+		//Special Case (Boat SPNPC (Kappn))	
+		data = GetData(0x18C);
+		if(data != 0)
+		{
+			vec.push_back(NPCdata{ GetSPName(0x15), data }); //0x15 is Kappn's SPVID (it isn't in the RAM when he is loaded there)
+		}
+
+		//Special Case (Tour Tortimer (specifically at the tour results))	
+		data = GetData(0x18B);
+		if(data != 0)
+		{
+			vec.push_back(NPCdata{ GetSPName(0x41), data }); //0x41 is Tortimers's SPVID (it isn't in the RAM when he is loaded there)
+		}
+
+		//NNPC
+		for(int i = 0; i < 0xA; i++)
+		{
+			data = GetData(0x191 + !Player::IsIndoor(), i);
+			if(data != 0)
+			{
+				VID = GetVID(data);
+				vec.push_back(NPCdata{ GetNName(VID), data });
+			}
+		}
+
+		//Special Case (Mainstreet NNPC)
+		for(int i = 0; i < 0xA; i++)
+		{
+			data = GetData(0x194, i);
+			if(data != 0)
+			{
+				VID = GetVID(data);
+				vec.push_back(NPCdata{ GetNName(VID), data });
+			}
+		}
+
+		//Special Case (Tour NNPC (specifically the Hide and Seek Tour))
+		for(int i = 0; i < 5; i++)
+		{
+			data = GetData(0x1FC, i);
+			if(data != 0)
+			{
+				VID = GetVID(data);
+				vec.push_back(NPCdata{ GetNName(VID), data });
+			}
+		}
+
+		//PNPC
+		for(int i = 0; i < 8; i++)
+		{
+			data = GetData(0x193, i);
+			if(data != 0)
+			{
+				save = GetPlayerSave(data);
+				str = "";
+				Process::ReadString(save + 0x55A8, str, 16, StringFormat::Utf16); 
+				vec.push_back(NPCdata{ str, data });
+			}
+		}
+
+		//Special Case (Tour PNPC (specifically at the tour results))
+		for(int i = 0; i < 5; i++)
+		{
+			data = GetData(0x189, i);
+			if(data != 0)
+			{
+				save = GetPlayerSave(data);
+				str = "";
+				Process::ReadString(save + 0x55A8, str, 16, StringFormat::Utf16); 
+				vec.push_back(NPCdata{ str, data });
+			}
+		}
+
+		//Special Case (Boat PNPC (When going to the island/leaving island))
+		for(int i = 0; i < 5; i++)
+		{
+			data = GetData(0x18D, i);
+			if(data != 0)
+			{
+				save = GetPlayerSave(data);
+				str = "";
+				Process::ReadString(save + 0x55A8, str, 16, StringFormat::Utf16); 
+				vec.push_back(NPCdata{ str, data });
+			}
+		}
+	}
+
+	void NPC::AnimationExecuter(u8 Mode, u32 Address, u8 Anim, u16 Tool, u16 Snake, u8 Emotion)
+	{
+		u16 ToolRdm = Utils::Random(0x334C, 0x3383);
+		u8 EmotionRdm = Utils::Random(1, 0x40);
+
+		if(Address == 0)
+			return;
+
+		u32 null[]{0};
+		switch(Mode)
+		{
+			case 0: //Animation
+			{
+				if(!IDList::AnimValid(Anim) || (Anim == 0xFF))
+					return;
+
+				Process::Write32((u32)&pfunction8, 0x6E7D54); //0x6E6D74 EUR
+				(void)pfunction8(Address + 0x78, Anim, 0, 0xAE6864, (u32)null, (u32)null, 0, 0x8816C4);
+				break;
+			}
+			case 1: //Tool
+			{
+				u16 ToolOk;
+				if(!IDList::ToolValid(Tool))
+					ToolOk = 0x2001;
+				else
+					ToolOk = Tool;
+				
+				Process::Write32((u32)&pfunction3, 0x6EE778); //0x6ED798 EUR
+				if(Tool == 0xFFFF)
+					(void)pfunction3(Address + 0x78, 0, (u32)&ToolRdm);
+				else
+					(void)pfunction3(Address + 0x78, 0, (u32)&ToolOk);
+				break;
+			}
+			case 2: //Snake
+			{
+				if(!IDList::SnakeValid(Snake))
+					return;
+				Process::Write32((u32)&pfunction5, 0x6EB384); //0x6EA3A4 EUR
+				(void)pfunction5(Address + 0x78, 0, Snake, 0, 0);
+				break;
+			}
+			case 3: //Emote
+			{
+				if(!IDList::EmotionValid(Emotion))
+					return;
+				Process::Write32((u32)&pfunction3, 0x6EC4E0); //0x6EB500 EUR
+				if(Emotion == 0xFF)
+					(void)pfunction3(Address + 0x78, 0, EmotionRdm);
+				else
+					(void)pfunction3(Address + 0x78, 0, Emotion);
+				break;
+			}
+		}
+	}
+
 	bool IDList::ValidIDFloat(float ID, float StardID, float EndID)
 	{
 		return (ID >= StardID && ID <= EndID);
@@ -1765,7 +2013,7 @@ namespace CTRPluginFramework
 	{
 		u16 Flags = (ItemID >> 16) & 0xFFFF;
 
-		if(((ItemID == 0x7FFE) || (ItemID == 0x80007FFE) || ValidID16(ItemID, 0, 0xFD)) && ((Flags <= 0x3407) || (Flags == 0x8000)))
+		if(((ItemID == 0x7FFE) || (ItemID == 0x80007FFE) || (ItemID == 0x585B) || ValidID16(ItemID, 0, 0xFD)) && ((Flags <= 0x3407) || (Flags == 0x8000)))
 			return true;
 
 		if((ValidID16(ItemID, 0x2001, 0x2060) || ValidID16(ItemID, 0x2089, 0x2185) || ValidID16(ItemID, 0x21E4, 0x22DF) || ValidID16(ItemID, 0x22E1, 0x30CB) || ValidID16(ItemID, 0x30D2, 0x3108) || ValidID16(ItemID, 0x3130, 0x33B4) || ValidID16(ItemID, 0x33BC, 0x34CD) || ValidID16(ItemID, 0x3726, 0x372A)) && ((Flags <= 0x3407) || (Flags == 0x8000)))
