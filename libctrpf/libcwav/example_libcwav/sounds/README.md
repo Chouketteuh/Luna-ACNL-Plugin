@@ -1,1 +1,0 @@
-Example sounds taken from [freesound.org](https://freesound.org/) all of which have the CC0 license.
