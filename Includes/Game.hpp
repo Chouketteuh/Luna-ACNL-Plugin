@@ -11,12 +11,14 @@
 
 namespace CTRPluginFramework
 {
-    using NPCdataVector = std::vector<NPCdata>;
+    using NPC_DataVector = std::vector<NPC_Data>;
     using OutfitVector = std::vector<Outfit>;
+    using ID_DataVector = std::vector<ID_Data>;
 
     extern const ID_Data Buildings[205];
     extern const ID_Data Rooms[109];
     extern const ID_Data OutdoorMusics[256];
+    extern const ID_Data Particles[36];
 
 	class Player
     {
@@ -26,40 +28,45 @@ namespace CTRPluginFramework
         static Player*          GetInstance(void);
         static u8               GetActualPlayerIndex(void);
         static u8               GetOnlinePlayerIndex(void);
-        static u32              GetOffset(u8 PlayerIndex = GetActualPlayerIndex());
-        static bool             Exists(u8 PlayerIndex = GetActualPlayerIndex());
-        static bool             IsLoaded(u8 PlayerIndex = GetActualPlayerIndex());
+        static u32              GetOffset(u8 PlayerIndex = 4, bool NoChecks = true);
+        static bool             Exists(u8 PlayerIndex = 4);
+        static bool             IsLoaded(u8 PlayerIndex = 4);
         static u32              GetAnimationInstance(u32 PlayerInstance, u8 someVal1, u8 someVal2, u32 encVal);
-        static u32              GetSpecificSave(u8 PlayerIndex = GetActualPlayerIndex());
-        static u32              GetPlayerSave(u8 PlayerIndex = GetActualPlayerIndex());
+        static PlayerStatus     GetPlayerStatus(u8 PlayerIndex = 4);
+        static u32              GetSpecificSave(u8 PlayerIndex = 4);
+        static ACNL_Player*     GetSaveData(u8 PlayerIndex = 4);
+        static u32              GetSaveOffset(u8 PlayerIndex = 4);
 
         static bool             InLoadingState(void);
 
-        static float* 			GetVelocity(u8 PlayerIndex = GetActualPlayerIndex());
-        static u8*              GetAnimation(u8 PlayerIndex = GetActualPlayerIndex());
-        static u16*             GetSnake(u8 PlayerIndex = GetActualPlayerIndex());
+        static float* 			GetVelocity(u8 PlayerIndex = 4);
+        static u8*              GetAnimation(u8 PlayerIndex = 4);
+        static u16*             GetSnake(u8 PlayerIndex = 4);
 
-        static u8               ActualRoom(u8 PlayerIndex = GetActualPlayerIndex());
+        static u8               ActualRoom(u8 PlayerIndex = 4);
         static bool             IsIndoor();
-        static bool             IsInRoom(u8 Room, u8 PlayerIndex = GetActualPlayerIndex(), bool NotLoaded = false);
-        static bool             IsOnTour(u8 PlayerIndex = GetActualPlayerIndex());
+        static bool             IsInRoom(u8 Room, u8 PlayerIndex = 4, bool NotLoaded = false);
+        static bool             IsOnTour(u8 PlayerIndex = 4);
         static u8               NextRoomCheck();
         static bool             CanWarp(u8 Room);
 
-        static bool             GetWorldCoords(u32 *wX, u32 *wY, u8 PlayerIndex = GetActualPlayerIndex());
-        static Coordinates      GetStructCoordinates(u8 PlayerIndex = GetActualPlayerIndex());
-        static void             SetStructCoordinates(Coordinates pos, u8 PlayerIndex = GetActualPlayerIndex());
-        static float*           GetCoordinates(u8 PlayerIndex = GetActualPlayerIndex());
-        static bool             GetCoordinatesRef(float &X, float &Z, u8 PlayerIndex = GetActualPlayerIndex());
-        static void             SetCoordinatesX(float x, u8 PlayerIndex = GetActualPlayerIndex());
-        static void             SetCoordinatesY(float y, u8 PlayerIndex = GetActualPlayerIndex());
-        static void             SetCoordinatesZ(float z, u8 PlayerIndex = GetActualPlayerIndex());
-        static void             AddToCoordinates(float xDiff, float yDiff, float zDiff, u8 PlayerIndex = GetActualPlayerIndex());
+        static bool             GetWorldCoords(u32 *wX, u32 *wY, u8 PlayerIndex = 4, bool NoChecks = true);
+        static Coordinates      GetStructCoordinates(u8 PlayerIndex = 4);
+        static void             SetStructCoordinates(Coordinates pos, u8 PlayerIndex = 4);
+        static float*           GetCoordinates(u8 PlayerIndex = 4);
+        static bool             GetCoordinatesRef(float &X, float &Z, u8 PlayerIndex = 4);
+        static void             SetCoordinatesX(float x, u8 PlayerIndex = 4);
+        static void             SetCoordinatesY(float y, u8 PlayerIndex = 4);
+        static void             SetCoordinatesZ(float z, u8 PlayerIndex = 4);
+        static void             AddToCoordinates(float xDiff, float yDiff, float zDiff, u8 PlayerIndex = 4);
 
         static u8               GetCurrentInventory();
         static u32              ReadInventory(u8 Slot);
         static void             WriteInventory(u8 Slot, u32 ID);
 
+        static void             UpdateStyle(void);
+        static void             UpdateTan(void);
+        static void             UpdateGender(u8 Gender);
         static void             SetOutfit(u16 Out1, u16 Out2, u16 Out3, u16 Out4, u16 Out5, u16 Out6);
         static u64              GetFriendCode(u8 PlayerIndex);
 
@@ -81,13 +88,15 @@ namespace CTRPluginFramework
         static void			    ReloadRoom(float *coords = Player::GetCoordinates());
         static void             AskReloadRoom(void);
         static u32 			    GetRoomData();
-        static float*           WorldCoordsToCoords(u8 wX, u8 wY, float res[3], u8 PlayerIndex = Player::GetActualPlayerIndex());
+        static float*           WorldCoordsToCoords(u8 wX, u8 wY, float res[3]);
         static u8               GetOnlinePlayerCount();
+        static StringVector     GetOnlinePlayerList();
+        static bool             OnOnlineIsland();
         static u32              GetCurrentMap();
         static u32Vector        GetMapItems(bool Include7FFE = false, u8 WorldX = 0, u8 WorldY = 0, u8 Width = 0xFF, u8 Length = 0xFF);
 		static u32              GetMapItemsCount(bool Include7FFE = false, u8 WorldX = 0, u8 WorldY = 0, u8 Width = 0xFF, u8 Length = 0xFF);
 
-        static void             AppendCoordData(u32 AnimInst, u32 pos, float *Coord);
+        static void             AppendCoordData(u32 AnimInst, u32 pos, float *Coords);
 
         static void             Particles(u32 ParticleID, float *wCoords, u32 u0 = 0x976C0E, u32 u1 = 0xAE6870);
 
@@ -114,6 +123,7 @@ namespace CTRPluginFramework
         static u32*             GetItemAtWorldCoords(u32 x, u32 y, bool u0 = 0);
         static u32              GetLockedSpotIndex(u8 wX, u8 wZ, u8 RoomID = 0xA5);
         static void			    ClearLockedSpot(u8 wX, u8 wY, u8 RoomID, u32 param_4 = 4);
+        static Item_Categories 	GetItemCategorie(u32 itemID);
     };
     
     class Animation
@@ -150,7 +160,7 @@ namespace CTRPluginFramework
         static u8               GetSPVID(u32 npcData);
         static u16              GetVID(u32 npcData);
         static u32              GetPlayerSave(u32 npcData);
-        static void             GetLoadedNPC(NPCdataVector &vec);
+        static void             GetLoadedNPC(NPC_DataVector &vec);
         static void             AnimationExecuter(u8 Mode, u32 Address, u8 Anim, u16 Tool, u16 Snake, u8 Emotion);
     };
 
@@ -172,10 +182,13 @@ namespace CTRPluginFramework
         static bool             CustomAnimValid(u8 CustomAnim);
         static bool             BuildingValid(u8 BuildingID);
         static bool             MusicValid(u8 MusicID);
+        static bool             ParticleValid(u16 Particle);
 
+        static std::string      GetItemName(u16 ID);
         static std::string      GetRoomName(u8 ID);
         static std::string      GetBuildingName(u8 ID);
         static std::string      GetOutdoorMusicName(u8 ID);
+        static std::string      GetParticleName(u16 ID);
 	};
 
     class Camera

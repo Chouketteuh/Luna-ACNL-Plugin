@@ -38,21 +38,21 @@ namespace CTRPluginFramework
 	const std::string ReloadNote = Color::Yellow << "Reload the area to see all the effects.";
 	const std::string TurboNote = Color::Yellow << "Affected by turbo mode.";
 
-	const std::string SetSeedersNote = "Sets ID for:" << Color::DeepSkyBlue << "\n-1st slot of the inventory (+ copy)\n-All droppers\n-PickUp Mod\n-Map Editor" << Color::White;
+	const std::string SetSeedersNote = "Sets ID for:" << Color::DeepSkyBlue << "\n-1st slot of the inventory (+ copy)\n-All droppers\n-PickUp Mod\n-Map Editor" << Color::White << "\n\nCan display items names with:\n" << Color::Yellow << "\"Luna/ItemsList.txt\"" << Color::White;
 	const std::string TouchDropNote = "BEST DROP EVER\n\n" + TurboNote;
 	const std::string AnimModNote = "Select your animation with the\nanimation selector,\nthen execute it with (Execution Key)\n\n" + TurboNote << Color::White;
 	const std::string ForceAnimationsToOthersNote = "Force on everyone:" << Color::DeepSkyBlue << "\n-Animations\n-Moonjump\n-Restore movements (Idle)\n\n" + TurboNote << Color::White;
 	const std::string OnlineIslandModelNote = " If you want this cheat working " << Color::White << "\n\n-Enable it before going to the online island\n-Require to be the host\n(The one with the chat bar in " << Color::Blue << "BLUE" << Color::White << ")";
 	const std::string ChatSpamNote = "Let you spam the last message you sended!" << Color::Yellow << "Cannot be used with \"Keyboard Extender\".";
 
-    #define MAJOR_VERSION		2
+	#define MAJOR_VERSION		2
 	#define MINOR_VERSION		0
 	#define REVISION_VERSION	0
 	#define STRINGIFY(x)		#x
 	#define TOSTRING(x)			STRINGIFY(x)
 	#define STRING_VERSION		"[" TOSTRING(MAJOR_VERSION) "." TOSTRING(MINOR_VERSION) "." TOSTRING(REVISION_VERSION) "]"
-    static const std::string	PluginName = "" << Color::Magenta << "UN" << Color::Purple << " CN PUGIN";
-    static const std::string	Credits =
+	static const std::string	PluginName = "" << Color::Magenta << "UN" << Color::Purple << " CN PUGIN";
+	static const std::string	Credits =
 		"LUNA ACNL PLUGIN - Version" STRING_VERSION "\n"
 		"Creation date:26/04/19\n\n"
 		" Credits \n"
@@ -60,7 +60,7 @@ namespace CTRPluginFramework
 		" Kominost:Developer & cheats creator.\n"
 		" Woshishee:Help with updates and plugin operation.\n"
 		" FOXXY/FEX plugin:Multiple additions of cheats to the plugin.\n"
-		" RyDog plugin:Multiple additions of cheats to the plugin.\n"
+		" RyDog/Slattz plugin:Multiple additions of cheats to the plugin.\n"
 		" Vapecord plugin:Multiple additions of cheats to the plugin.\n\n"
 		"Discord:thib.py\n";
 
@@ -75,9 +75,9 @@ namespace CTRPluginFramework
 
 		// Initialize settings
 		settings.AllowActionReplay = true;
-        settings.AllowSearchEngine = true;
-        settings.AreN3DSButtonsAvailable = true;
-        settings.TryLoadSDSounds = true;
+		settings.AllowSearchEngine = true;
+		settings.AreN3DSButtonsAvailable = true;
+		settings.TryLoadSDSounds = true;
 
 		// Plugin interface color changer
 		settings.WindowTitleColor = Color::Yellow;
@@ -172,11 +172,16 @@ namespace CTRPluginFramework
 		// Synchronize the menu with frame event
 		menu.SynchronizeWithFrame(true);
 
+		if(CheckGameVersion())
+			return(1); // Unsupported version
+
+		// Keeps internet connection when menu is opened (not working?)
+		// menu.Callback(InitKeepConnection);
+
 		// StartUp Message
 		// menu.OnFirstOpening = StartMsg;
 
-		if(CheckGameVersion())
-			return(1); // Unsupported version
+		menu.OnNewFrame = OnNewFrameCallback;
 
 		OptionsFolder = new MenuFolder(Color::Red << "Options");
 		{
@@ -192,9 +197,10 @@ namespace CTRPluginFramework
 			MovementsFolder->Append(new MenuEntry(Color::Orange << " Coordinates Modifier: ", TouchCoordinates)),
 			MovementsFolder->Append(EntryWithHotkey(new MenuEntry(Color::Yellow << " Walk Over Things", WalkOverThings, ""),{Hotkey(Key::L | Key::DPadDown, OnOffNote)})),
 			MovementsFolder->Append(EntryWithHotkey(new MenuEntry(Color::LimeGreen << " Moon Jump", MoonJump, OptionMoonJump, ""),{Hotkey(Key::L | Key::DPadUp, Color::Yellow << "Moon Jump Up"), Hotkey(Key::L | Key::DPadDown, "Moon Jump Down")})),
-			MovementsFolder->Append(EntryWithHotkey(new MenuEntry(Color::Turquoise << " Speed Hack", SpeedHack),{Hotkey(Key::B, Color::Yellow << "Sonic")})),
-			MovementsFolder->Append(EntryWithHotkey(new MenuEntry(Color::DeepSkyBlue << " Movement Changer", MovementChanger, ""),{Hotkey(Key::L | Key::DPadLeft, SelectModeNote)})),
-			MovementsFolder->Append(EntryWithHotkey(new MenuEntry(Color::Purple << " Room Warping", RoomMod, ""),{Hotkey(Key::L | Key::X, Color::Yellow << "Set ID")})),
+			MovementsFolder->Append(new MenuEntry(Color::Turquoise << " Speed Mod", SpeedMod, MenuSpeedMod)),
+			MovementsFolder->Append(EntryWithHotkey(new MenuEntry(Color::DeepSkyBlue << " Speed Hack", SpeedHack),{Hotkey(Key::B, Color::Yellow << "Sonic")})),
+			MovementsFolder->Append(EntryWithHotkey(new MenuEntry(Color::Purple << " Movement Changer", MovementChanger, ""),{Hotkey(Key::L | Key::DPadLeft, SelectModeNote)})),
+			MovementsFolder->Append(EntryWithHotkey(new MenuEntry(Color::Red << " Room Warping", RoomMod, ""),{Hotkey(Key::L | Key::X, Color::Yellow << "Set ID")})),
 
 			menu.Append(MovementsFolder);
 		}
@@ -203,20 +209,20 @@ namespace CTRPluginFramework
 		{
 			ItemsFolder->Append(EntryWithHotkey(new MenuEntry(Color::Red << " All Seeders", SetSeeders, OptionSetSeeders, SetSeedersNote),{Hotkey(Key::B | Key::DPadRight, Color::Yellow << "Set ID"), Hotkey(Key::B | Key::DPadDown, "Copy ID on the ground"), Hotkey(Key::Start | Key::B, "Set ID to replace"), Hotkey(Key::L, "Scroll Item Left"), Hotkey(Key::R, "Scroll Item Right")})),
 			ItemsFolder->Append(new MenuEntry(Color::Orange << " Touch Drop: ", TouchDrop, OptionTouchDrop, TouchDropNote)), // add particles?
-			ItemsFolder->Append(EntryWithHotkey(new MenuEntry(Color::Yellow << " Auto Drop", AutoDrop),{Hotkey(Key::B | Key::DPadLeft, OnOffNote)})),
+			ItemsFolder->Append(EntryWithHotkey(new MenuEntry(Color::Yellow << " Auto Drop/Remove", AutoDropRemove, OptionAutoDropRemove),{Hotkey(Key::B | Key::DPadLeft, OnOffNote)})),
 			ItemsFolder->Append(EntryWithHotkey(new MenuEntry(Color::LimeGreen << " Drop Modifier", DropModifier, OptionDropModifier, ""),{Hotkey(Key::X | Key::DPadUp, SelectModeNote)})),
 			ItemsFolder->Append(EntryWithHotkey(new MenuEntry(Color::Turquoise << " PickUp Mod", PickUpMod, TurboNote << Color::White),{Hotkey(Key::L | Key::B, SelectModeNote), Hotkey(Key::R | Key::B, OnOffNote + " PickUp Mod"), Hotkey(Key::Y | Key::Start, OnOffNote + " Auto PickUp")})),
-			ItemsFolder->Append(EntryWithHotkey(new MenuEntry(Color::DeepSkyBlue << " Map Editor" + Crash, MapEditor),{Hotkey(Key::Start | Key::DPadUp, OnOffNote)})),
+			ItemsFolder->Append(EntryWithHotkey(new MenuEntry(Color::DeepSkyBlue << " Map Editor", MapEditor),{Hotkey(Key::Start | Key::DPadUp, OnOffNote)})),
 			ItemsFolder->Append(EntryWithHotkey(new MenuEntry(Color::Magenta << " Trampler", Trampler),{Hotkey(Key::L | Key::DPadRight, OnOffNote)})),
 			ItemsFolder->Append(new MenuEntry(Color::Purple << " Sets drop" + Soon, nullptr)), // soon
 			ItemsFolder->Append(EntryWithHotkey(new MenuEntry(Color::Red << " Catalog to pockets", CatalogToPockets),{Hotkey(Key::L | Key::R, Color::Yellow << "Open catalog")})),
-			ItemsFolder->Append(new MenuEntry(Color::Orange << " Drop & Dig Anywhere" + Test, DropAndDigAnywhere)), // soon (need tests)
+			ItemsFolder->Append(new MenuEntry(Color::Orange << " Inventory Inf. Drop & Plant", InfiniteDropPlant)),
 
 			menu.Append(ItemsFolder);
 		}
 
 		AnimationsFolder = new MenuFolder(Color::Orange << "Animations");
-        {
+		{
 			AnimationsFolder->Append(EntryWithHotkey(new MenuEntry(Color::Red << " Idle", Idle),{Hotkey(Key::L, Color::Yellow << "Restore movements")})),
 			AnimationsFolder->Append(EntryWithHotkey(new MenuEntry(Color::Orange << " Animations Mod", AnimMod, AnimModNote),{Hotkey(Key::Y | Key::DPadRight, Color::Yellow << "Set ID"), Hotkey(Key::Y | Key::DPadUp, SelectModeNote), Hotkey(Key::Y | Key::DPadLeft, "ON/OFF"), Hotkey(Key::A, "Execute animation")})),
 			AnimationsFolder->Append(EntryWithHotkey(new MenuEntry(Color::Yellow << " Force Animations To Everyone", ForceAnimationsToOthers, ForceAnimationsToOthersNote),{Hotkey(Key::X | Key::DPadRight, Color::Yellow << "Animations"), Hotkey(Key::X | Key::DPadDown, "Restore movements"), Hotkey(Key::X | Key::DPadLeft, "Moonjump")})),
@@ -224,8 +230,8 @@ namespace CTRPluginFramework
 			AnimationsFolder->Append(new MenuEntry(Color::Turquoise << " Slow-Motion Animations" + Test, SlowMotionAnim)), // fix?
 			AnimationsFolder->Append(new MenuEntry(Color::DeepSkyBlue << " Anti Animation", AntiAnimation)),
 			AnimationsFolder->Append(new MenuFolder(Color::Magenta << "NPCs Animations", "",
-        	{
-            	EntryWithHotkey(new MenuEntry(Color::Red << " NPCs Menu", NPCMenu),{Hotkey(Key::Y | Key::DPadDown, MenuNote)}),
+			{
+				EntryWithHotkey(new MenuEntry(Color::Red << " NPCs Menu", NPCMenu),{Hotkey(Key::Y | Key::DPadDown, MenuNote)}),
 				EntryWithHotkey(new MenuEntry(Color::Orange << " NPCs Animations Executer", NPCAnimationExecuter),{Hotkey(Key::Y | Key::B, Color::Yellow << "Execute animation")}),
 				EntryWithHotkey(new MenuEntry(Color::Yellow << " NPCs Coordinates Modifier", NPCCoordinates, SetNPCCoordSpeed),{Hotkey(Key::Start | Key::DPadUp, Color::Yellow << "Up"), Hotkey(Key::Start | Key::DPadDown, "Down"), Hotkey(Key::Start | Key::DPadLeft, "Left"), Hotkey(Key::Start | Key::DPadRight, "Right")})
 			}));
@@ -251,7 +257,7 @@ namespace CTRPluginFramework
 		{
 			IslandFolder->Append(EntryWithHotkey(new MenuEntry(Color::Red << " Island Items Saves", IslandItemsSaves),{Hotkey(Key::R | Key::X, MenuNote)})),
 			IslandFolder->Append(new MenuFolder(Color::Orange << "Island Acres Modifier" + Online, "",
-        	{
+			{
 				new MenuEntry(Color::Red << "Island Acres Preset Creator", OnlineIslandAcresCreator, ModelsCreator, OnlineIslandModelNote),
 				new MenuEntry(Color::Orange << "Island Acres Preset:Funny Island", OnlineIslandAcresModel1, OnlineIslandModelNote),
 				new MenuEntry(Color::Yellow << "Island Acres Preset:Town", OnlineIslandAcresModel2, OnlineIslandModelNote),
@@ -261,7 +267,7 @@ namespace CTRPluginFramework
 			IslandFolder->Append(new MenuEntry(Color::Turquoise << " Change Lloid Tools", nullptr, LloidIslandToolEditor)),
 			IslandFolder->Append(new MenuEntry(Color::DeepSkyBlue << " Island Region Spoofer", nullptr, IslandRegionSpoofer)),
 			IslandFolder->Append(new MenuEntry(Color::Magenta << " Enable All Tours", EnableAllTours)),
-			IslandFolder->Append(new MenuEntry(Color::Purple << " Get Bonus Ore & Needed Fruits", nullptr, OreAndFruitsTours)),
+			IslandFolder->Append(new MenuEntry(Color::Purple << " Get Bonus Ore & Needed Fruits" + Test, nullptr, OreAndFruitsTours)),
 			IslandFolder->Append(new MenuEntry(Color::Red << " End Actual Tour", nullptr, TourEnd)),
 
 			menu.Append(IslandFolder);
@@ -283,7 +289,7 @@ namespace CTRPluginFramework
 		VisualSoundsFolder = new MenuFolder(Color::Orange << "Visual & Sounds");
 		{
 			VisualSoundsFolder->Append(new MenuEntry(Color::Red << " Effects Mod" + Soon, nullptr)),
-			VisualSoundsFolder->Append(new MenuEntry(Color::Orange << " Camera Mod" + Soon, nullptr)),
+			VisualSoundsFolder->Append(EntryWithHotkey(new MenuEntry(Color::Orange << " Camera Mod" + Test, CameraMod, SetCameraModSpeed),{Hotkey(Key::R, Color::Yellow << "Rotate Multi-angles (+ CPad)"), Hotkey(Key::B, "Coordinate Modifier (+ DPad + L + R)"), Hotkey(Key::R | Key::X, "Toggle follow player camera"), Hotkey(Key::R | Key::Y, "Lock Player")})),
 			VisualSoundsFolder->Append(new MenuEntry(Color::Yellow << " Disable L + R Screenshots", DisableScreenshots)),
 			VisualSoundsFolder->Append(new MenuEntry(Color::LimeGreen << " FOV Modifier", ChangeFOV, SetFOV)),
 			VisualSoundsFolder->Append(new MenuEntry(Color::Turquoise << " Game Speed", GameSpeed)),
@@ -314,11 +320,10 @@ namespace CTRPluginFramework
 			SaveFolder->Append(new MenuEntry(Color::Orange << " Town Name Changer", nullptr, TownNameChanger)),
 			SaveFolder->Append(new MenuEntry(Color::Yellow << " TPC Picture Export", nullptr, TPCPictureExport)),
 			SaveFolder->Append(new MenuEntry(Color::LimeGreen << " TPC Picture Import", nullptr, TPCPictureImport)),
-			SaveFolder->Append(new MenuEntry(Color::Turquoise << " Dump Save", nullptr, DumpSave)),
-			SaveFolder->Append(new MenuEntry(Color::DeepSkyBlue << " Restore Save", nullptr, RestoreSave, ReloadNote)),
-			SaveFolder->Append(new MenuEntry(Color::Magenta << " Player Badges", nullptr, Badges)),
-			SaveFolder->Append(new MenuEntry(Color::Purple << " Fill Player Collectables", nullptr, FillCollectablesList)),
-			SaveFolder->Append(new MenuEntry(Color::Red << " Dream Code Modifier", nullptr, DreamCodeModifier)),
+			SaveFolder->Append(new MenuEntry(Color::Turquoise << " Saves Manager", nullptr, SavesManager)),
+			SaveFolder->Append(new MenuEntry(Color::DeepSkyBlue << " Player Badges", nullptr, Badges)),
+			SaveFolder->Append(new MenuEntry(Color::Magenta << " Fill Player Collectables", nullptr, FillCollectablesList)),
+			SaveFolder->Append(new MenuEntry(Color::Purple << " Dream Code Modifier", nullptr, DreamCodeModifier)),
 
 			menu.Append(SaveFolder);
 		}
@@ -331,7 +336,7 @@ namespace CTRPluginFramework
 			MiscellaneousFolder->Append(new MenuEntry(Color::LimeGreen << " Time Machine", nullptr, TimeMachine)),
 			MiscellaneousFolder->Append(new MenuEntry(Color::Turquoise << " Tools effect", ToolsEffects, ToolsChoice)),
 			MiscellaneousFolder->Append(new MenuEntry(Color::DeepSkyBlue << " Tree Shake Chop", TreeShakeChop)),
-			MiscellaneousFolder->Append(EntryWithHotkey(new MenuEntry(Color::Magenta << " Particles Spawner", ParticlesSpawner, ParticlesSize, Color::Red << "ONLY VISIBLE TO YOU" + TurboNote << Color::White),{Hotkey(Key::R | Key::Y, Color::Yellow << "Set ID"), Hotkey(Key::R | Key::A, "Spawn Particle(s)")})),
+			MiscellaneousFolder->Append(EntryWithHotkey(new MenuEntry(Color::Magenta << " Particles Spawner" + Crash, ParticlesSpawner, ParticlesSize, Color::Red << "ONLY VISIBLE TO YOU\n" + TurboNote << Color::White),{Hotkey(Key::R | Key::Y, Color::Yellow << "Set ID"), Hotkey(Key::R | Key::A, "Spawn Particle(s)")})),
 			MiscellaneousFolder->Append(new MenuEntry(Color::Purple << " Edit All Furnitures Online", EditEveryRoomOnline)),
 			MiscellaneousFolder->Append(new MenuEntry(Color::Red << " Skip Isabelle", SkipIsabelle)),
 
@@ -340,41 +345,31 @@ namespace CTRPluginFramework
 
 		DevFolder = new MenuFolder(Color::Lime << "Dev Menu");
 		{
-			DevFolder->Append(EntryWithHotkey(new MenuEntry(Color::Lime << " Address Test", AddressTest),{Hotkey(Key::Start | Key::DPadLeft, Color::Yellow << "Set Address"), Hotkey(Key::Start | Key::DPadDown, "Read Address"), Hotkey(Key::Start | Key::DPadRight, "Display"), Hotkey(Key::Start | Key::X, "Write Address")})),
+			DevFolder->Append(EntryWithHotkey(new MenuEntry(Color::Lime << " Address Test", AddressTest),{Hotkey(Key::Start | Key::DPadLeft, Color::Yellow << "Set Address"), Hotkey(Key::Start | Key::DPadRight, "Write Address")})),
 			DevFolder->Append(EntryWithHotkey(new MenuEntry(Color::Lime << " Game Function Call", GameFuncCall),{Hotkey(Key::Start | Key::R, MenuNote)})),
 			DevFolder->Append(new MenuEntry(Color::Lime << " Get Players 3DS Friend Code", nullptr, GetFriendCodeMenu)),
-			DevFolder->Append(new MenuEntry(Color::Lime << " .png Display Keyboard Menu", nullptr, DisplayRegion)),
+			//DevFolder->Append(new MenuEntry(Color::Lime << " .png Display Keyboard Menu", nullptr, DisplayRegion)),
+			DevFolder->Append(EntryWithHotkey(new MenuEntry(Color::Lime << " Fish Thrower", FishThrower),{Hotkey(Key::R | Key::DPadUp, "Select Player"), Hotkey(Key::R | Key::DPadDown, "Toggle Random Mode"), Hotkey(Key::R | Key::DPadRight, "Spawn Fish"), Hotkey(Key::R | Key::DPadLeft, "Set Fish")})),
 
 			menu.Append(DevFolder);
 			IsFolderUsable(DevFolder, false);
 		}
 
 		// Initialize some cheats
-        Game::StartUpCheats();
+		Game::StartUpCheats();
 
 		// Initialize player
-        Player::GetInstance();
+		Player::GetInstance();
 
 		// Wait until a player is loaded
 		menu += PlayerUpdateCallback;
 
 		menu.Callback(DevMenuCallback);
+		menu.Callback(ResetBools);
 
 		// Welcome message
 		menu.ShowWelcomeMessage(false);
-
-		OSD::Notify(Color::Red << "P" << 
-					Color::Orange << "l" << 
-					Color::Yellow << "u" <<
-					Color::Lime << "g" <<
-					Color::Green << "i" << 
-					Color::Cyan << "n " << 
-					Color::Blue << "R" <<
-					Color::Purple << "e" << 
-					Color::Red << "a" << 
-					Color::Orange << "d" << 
-					Color::Yellow << "y" << 
-					Color::Lime << "!");
+		OSD::Notify(Color::DeepSkyBlue << "Plugin Ready!");
 
 		// Launch menu and mainloop
 		menu.Run();

@@ -2,11 +2,15 @@
 
 namespace CTRPluginFramework
 {
+	bool WantReload = false;
+    bool TimeMachineBool = false;
+
 	bool Turbo = false;
     bool OSD = true;
 	bool offlinemoonjump = false;
 	bool SeedersOSD = true;
 	bool TouchRemove = false;
+	bool AutoRemove = false;
 	bool ByPassing = false;
 	bool MapEditorActive = false;
 	bool IsCatalogOpen = false;
@@ -14,28 +18,34 @@ namespace CTRPluginFramework
 	bool IfForceAllowed = true;
 	bool IslandAcresCreator = false;
 	bool KbExtender = false;
+	bool CameraPatch = false;
 	bool Fov = false;
 	bool ControlPlayer = false;
 	bool Save = true;
 
-	static float CoordSpeed = 5.0;
+	static float CoordSpeed = 5.0f;
+	static float WalkSpeed = 1.5f;
 
 	static u32 SeedersID = 0x80007FFE, ItemIDToReplace = 0x7FFE;
 	u8 DropType = 0xA, DropAnim = 0x56;
+	u32 selectedX, selectedY;
+	static u8 MapEditorsize;
+	static bool MapEditorRemoval = false;
 
 	u8 Appearance[3] = {0, 0, 0};
 	u8 AnimID = 6, EmotionID = 1, NPC_Anim = 0, NPC_Emotion = 1;
 	u16 SnakeID = 0x1DC, NPC_Snake = 0x1DC, AnimItem, ToolID = 0x2001, NPC_AnimItem = 0x2001, SoundID = 0x7FA;
 	static u8 Mode = 0, Index = 0, NPCMode = 0, NPCIndex = 0;
 	static u32 CurrentNPCAddress = 0;
-	static float NPC_CoordSpeed = 4.0;
+	static float NPC_CoordSpeed = 4.0f;
 
+	static u32Vector IslandItems;
 	static u8 CustomIslandAcres[16];
 	u16 ShopItem[4] = {0x2083, 0x2083, 0x2083, 0x2083};
 
 	struct Building 
 	{
-		u16 id;
+		u8 id;
 		u8 x;
 		u8 y;
 	};
@@ -66,11 +76,13 @@ namespace CTRPluginFramework
 	static bool HasSet[4] = {false, false, false, false};
 	u16 pID[4];
 
-	static float FloatFov = 1.0;
+	static float CamSpeed = 1.0f;
+	static float FloatFov = 1.0f;
 
 	u8 SelectedPlayerIndex = 0;
 
 	static s8 toolsuchoice = 50;
+	const float ParticleSpace = 32.0f; // Display interval
 
 	float StartCoords[3] =
 	{
@@ -151,6 +163,14 @@ namespace CTRPluginFramework
 	StringVector CountryOpt =
 	{
 		Color::Red << "DISABLE" << Color::White,
+		"France",
+	    "Canada",
+		"Royaume-Uni",
+		"Etats-Unis",
+		"Japon",
+		"Chine",
+		"Australie",
+		"Mexique",
 		"Hacker Island",
 	};
 
@@ -244,9 +264,9 @@ namespace CTRPluginFramework
 
 			//Multi-Presses
 			if(Turbo)
-				Process::Write32(0x5C5BEC, 0x1A000028); //0xE1A00000
+				Process::Patch(0x5C5BEC, 0x1A000028); //0xE1A00000
 			else if(!Turbo)
-				Process::Write32(0x5C5BEC, 0x0A000028); //0x5C4C34 EUR
+				Process::Patch(0x5C5BEC, 0x0A000028); //0x5C4C34 EUR
 		}
 	}
 
@@ -389,7 +409,7 @@ namespace CTRPluginFramework
 				OSD::Notify("Walk Over Things:" + (Enabling ? Color::Green << "ON" : Color::Red << "OFF"));
 				for(u8 i = 0; i < 8; i++) 
 				{
-					Enabling ? Process::Write32(Addresses[i], patch[i]) : Process::Write32(Addresses[i], Original[i]);
+					Enabling ? Process::Patch(Addresses[i], patch[i]) : Process::Patch(Addresses[i], Original[i]);
 				}
 			}
 		}
@@ -434,15 +454,49 @@ namespace CTRPluginFramework
 	void    OptionMoonJump(MenuEntry *entry)
 	{
 		s8 uchoice = OpenList("", {"Moon Jump Online", "Moon Jump Offline"});
-		if(uchoice < 0)
-			return;
-		
-		if(uchoice == 0)
-			offlinemoonjump = false;
-		else if(uchoice == 1)
-			offlinemoonjump = true;
-		
+		switch(uchoice)
+		{
+			case 0:
+				offlinemoonjump = false;
+				break;
+			case 1:
+				offlinemoonjump = true;
+				break;
+			default:
+				return;
+		}
 		OSD::Notify("Moon Jump:" + (offlinemoonjump ? Color::Orange << "Offline" : Color::DeepSkyBlue << "Online"));
+	}
+
+	void	SpeedMod(MenuEntry *entry)
+	{
+		if(entry->IsActivated())
+		{
+			Process::WriteFloat(0x887880, WalkSpeed);
+			Process::WriteFloat(0x887888, WalkSpeed); 
+			Process::WriteFloat(0x887958, WalkSpeed);
+			Process::WriteFloat(0x5D4C80, 1.8f * WalkSpeed * 4096.0f); //swim speed
+			Process::Write16(0x8879B8, 0x16BC); //fast 0x20 rotate
+			Process::Write16(0x887C68, 0xB5E); //fast 0x1F rotate
+			Process::Write16(0x94EF34, 0xB5E); //fast 0x1F rotate
+			Process::Write8(0x8878A4, 0x14 * WalkSpeed); //slide
+		}
+		else if(!entry->IsActivated())
+		{
+			Process::Write32(0x887880, 0x3F7851EC);
+			Process::Write32(0x887888, 0x3F866666); 
+			Process::Write32(0x887958, 0x3ED70A3D);
+			Process::Write32(0x5D4C80, 0x45800000); //swim speed
+			Process::Write16(0x8879B8, 0x2BC); //fast 0x20 rotate
+			Process::Write16(0x887C68, 0x309); //fast 0x1F rotate
+			Process::Write16(0x94EF34, 0); //fast 0x1F rotate
+			Process::Write8(0x8878A4, 0x14); //slide
+		}
+	}
+
+	void	MenuSpeedMod(MenuEntry *entry)
+	{
+		SetUpKB("Enter the speed you want to use:", false, 4, WalkSpeed, WalkSpeed);
 	}
 
 	void	SpeedHack(MenuEntry *entry)
@@ -453,7 +507,7 @@ namespace CTRPluginFramework
 			float fVelocity;
 
 			if(!Process::Read32(USA_Velocity_Address, Velocity) || !Process::ReadFloat(USA_Velocity_Address, fVelocity)) //check if we're on a loading screen or no
-                return;
+				return;
 
 			if(Velocity >= 0x41A79DB3) //if limit
 			{
@@ -468,7 +522,7 @@ namespace CTRPluginFramework
 
 	void	MovementChanger(MenuEntry *entry)
 	{
-		static bool Enabling = false;
+		static bool Walking = false;
 		const u32 Addresses[6] =
 		{
 			0x67F748, //0x67E780 EUR
@@ -484,11 +538,11 @@ namespace CTRPluginFramework
 		
 		if(entry->Hotkeys[0].IsPressed())
 		{
-			Enabling = !Enabling;
-			OSD::Notify("Movement Mode:" + (Enabling ? Color::LimeGreen << "Walking" : Color::DeepSkyBlue << "Swimming"));
+			Walking = !Walking;
+			OSD::Notify("Movement Mode:" + (Walking ? Color::LimeGreen << "Walking" : Color::DeepSkyBlue << "Swimming"));
 			for(u8 i = 0; i < 6; i++) 
 			{
-				Enabling ? Process::Write32(Addresses[i], patch[i]) : Process::Write32(Addresses[i], patch1[i]);
+				Walking ? Process::Patch(Addresses[i], patch[i]) : Process::Patch(Addresses[i], patch1[i]);
 			}
 		}
 		if(!entry->IsActivated())
@@ -496,7 +550,7 @@ namespace CTRPluginFramework
 			OSD::Notify("Movement Mode:" << Color::Red << "Default");
 			for(u8 i = 0; i < 6; i++)
 			{
-                Process::Write32(Addresses[i], Original[i]);
+				Process::Patch(Addresses[i], Original[i]);
 			}
 		}
 	}
@@ -550,21 +604,21 @@ namespace CTRPluginFramework
 
 	bool    SetSeedersOSD(const Screen &screen)
 	{
-		u32 y;
+		u32 x = 3, y;
 		if(screen.IsTop && !Player::InLoadingState())
 		{
-			y = screen.Draw("SeedersID:" << ((SeedersID == 0 || SeedersID == 0x7FFE || SeedersID == 0x80007FFE) ? Color::Blue << "Nothing" : (IDList::ItemValid(SeedersID) ? Color::Lime : Color::Yellow) << Utils::Format("%08X", SeedersID)), 288, 0);
-			if(ItemIDToReplace != 0x7FFE) 
-				y = screen.Draw("Replace:" << (ItemIDToReplace == 0xFFFFFFFF ? Color::Red << "All" : Color::Orange << Utils::Format("%08X", ItemIDToReplace)), 300, y);
+			y = screen.Draw("SeedersID:" << ((SeedersID == 0 || SeedersID == 0x7FFE || SeedersID == 0x80007FFE) ? Color::Blue << "Nothing" : (IDList::ItemValid(SeedersID) ? Color::Lime : Color::Yellow) << Utils::Format("%08X", SeedersID) << (((SeedersID & 0xFFFF) == 0 || (SeedersID & 0xFFFF) == 0x7FFE || IDList::GetItemName(SeedersID) == "") ? "" : Color::White << "|" << (IDList::ItemValid(SeedersID) ? Color::Lime : Color::Yellow) << IDList::GetItemName(SeedersID))), x, 0);
+			if(ItemIDToReplace != 0x7FFE)
+				y = screen.Draw("Replace:" << (ItemIDToReplace == 0xFFFFFFFF ? Color::Red << "All" : Color::Orange << Utils::Format("%08X", ItemIDToReplace) << (((ItemIDToReplace & 0xFFFF) == 0 || (ItemIDToReplace & 0xFFFF) == 0x7FFE || ItemIDToReplace == 0xFFFFFFFF || IDList::GetItemName(ItemIDToReplace) == "") ? "" : Color::White << "|" << Color::Orange << IDList::GetItemName(ItemIDToReplace))), x+12, y);
 		}
 		return true;
 	}
 
-    void    SetSeeders(MenuEntry *entry)
-    {
+	void	SetSeeders(MenuEntry *entry)
+	{
 		static u32 KeysPressedTicks = 0;
 
-        if(entry->WasJustActivated())
+		if(entry->WasJustActivated())
 		{
 			// Enable EverythingSeeder, allow cheat items in inventory
 			Process::Write32(USA_EverythingSeeder1_Address, 0xE1A00000);
@@ -574,18 +628,18 @@ namespace CTRPluginFramework
 				OSD::Run(SetSeedersOSD);
 		}
 
-        if(entry->Hotkeys[0].IsPressed() && !Player::InLoadingState()) // Set
-        {
-			if(!SetUpKBNo("Type the ID of the item you want." << Color::Lime << "\nHex: 0~80007FFE", true, 8, SeedersID)) 
+		if(entry->Hotkeys[0].IsPressed() && !Player::InLoadingState()) // Set
+		{
+			if(!SetUpKBNo("Type the ID of the item you want." << Color::Lime << "\nHex: 0~80007FFE", true, 8, SeedersID))
 				return;
 
 			if(!(SeedersID == 0 || SeedersID == 0x7FFE || SeedersID == 0x80007FFE))
 				Player::WriteInventory(0, SeedersID);
-        }
+		}
 
 		if(entry->Hotkeys[1].IsPressed()) // Copy
 		{
-            u32 x, y;
+			u32 x, y;
 			if(Player::GetWorldCoords(&x, &y))
 			{
 				SeedersID = (u32)Items::GetItemAtWorldCoords(x, y);
@@ -599,7 +653,7 @@ namespace CTRPluginFramework
 
 		if(entry->Hotkeys[2].IsPressed() && !Player::InLoadingState()) // Replace
 		{
-            if(!SetUpKB("Type ID to remplace:" << Color::LimeGreen << "\nReset = 7FFE" << Color::White << " | " << Color::Red << "Replace everything = FFFFFFFF", true, 8, ItemIDToReplace, 0x7FFE))
+			if(!SetUpKB("Type ID to remplace:" << Color::LimeGreen << "\nReset = 7FFE" << Color::White << " | " << Color::Red << "Replace everything = FFFFFFFF", true, 8, ItemIDToReplace, 0x7FFE))
 				return;
 
 			if(ItemIDToReplace == 0)
@@ -608,23 +662,51 @@ namespace CTRPluginFramework
 
 		if(Controller::IsKeysReleased(entry->Hotkeys[3].GetKeys()) || Controller::IsKeysReleased(entry->Hotkeys[4].GetKeys())) 
 			KeysPressedTicks = 0;
-			
+
 		if(entry->Hotkeys[3].IsDown())
 		{
 			KeysPressedTicks++;
 			if((KeysPressedTicks < 90 ? (KeysPressedTicks % 10) == 1 : (KeysPressedTicks % 3) == 1) || KeysPressedTicks > 220)
 			{
-				SeedersID = (SeedersID - 1 == 0x1FFF ? 0xFD : SeedersID - 1) % 0x4000;
+				switch(SeedersID - 1)
+				{
+					case 0x2000:
+						SeedersID = 0xFD;
+						break;
+					case 0xFFFFFFFF: //-1
+					case 0x7FFD:
+					case 0x80007FFD:
+						SeedersID = 0x372A;
+						break;
+					default:
+						SeedersID--;
+						break;
+				}
 				Process::Read32(SeedersID, SeedersID);
 			}
 		}
-			
+
 		if(entry->Hotkeys[4].IsDown())
 		{
 			KeysPressedTicks++;
 			if((KeysPressedTicks < 90 ? (KeysPressedTicks % 10) == 1 : (KeysPressedTicks % 3) == 1) || KeysPressedTicks > 220)
 			{
-				SeedersID = (SeedersID + 1 == 0xFE ? 0x2000 : SeedersID + 1) % 0x4000;
+				switch(SeedersID + 1)
+				{
+					case 0xFE:
+						SeedersID = 0x2001;
+						break;
+					case 0x372B:
+						SeedersID = 0;
+						break;
+					case 0x7FFF:
+					case 0x80007FFF:
+						SeedersID = 1;
+						break;
+					default:
+						SeedersID++;
+						break;
+				}
 				Process::Read32(SeedersID, SeedersID);
 			}
 		}
@@ -633,7 +715,7 @@ namespace CTRPluginFramework
 			OSD::Stop(SetSeedersOSD);
 	}
 
-	void    OptionSetSeeders(MenuEntry *entry)
+	void	OptionSetSeeders(MenuEntry *entry)
 	{
 		if(MessageBox("Display of OSD? (ID Viewer)", DialogType::DialogYesNo).SetClear(ClearScreen::Top)())
 		{
@@ -647,7 +729,7 @@ namespace CTRPluginFramework
 		}
 	}
 
-	void    TouchDrop(MenuEntry *entry)
+	void	TouchDrop(MenuEntry *entry)
 	{
 		Hook h;
 		u32 worldX, worldY;
@@ -686,23 +768,33 @@ namespace CTRPluginFramework
 			}
 			if(!Player::InLoadingState() && !MapEditorActive && !AnimExecuting)
 			{
-				if(!TouchRemove) Items::PlaceItemWrapper(DropType, ItemIDToReplace, &SeedersID, &SeedersID, worldX, worldY, 0, 0, 0, 0, 0, DropAnim, 0xA5);
+				if(!TouchRemove) Items::PlaceItemWrapper(DropType, ItemIDToReplace, (SeedersID & 0xFFFF) == 0x339F ? (u32 *)0x597870 : &SeedersID, &SeedersID, worldX, worldY, 0, 0, 0, 0, 0, DropAnim, 0xA5);
 				else Items::TrampleAt(worldX, worldY);
 			}
 		}
 	}
 
-	void	OptionTouchDrop(MenuEntry *entry)
+	void    OptionTouchDrop(MenuEntry *entry)
 	{
-		if(MessageBox("Touch remove items?", DialogType::DialogYesNo).SetClear(ClearScreen::Top)())
-			TouchRemove = true;
-		else
-			TouchRemove = false;
+		s8 uchoice = OpenList("", {"Touch Drop", "Touch Remove"});
+		switch(uchoice)
+		{
+			case 0:
+				TouchRemove = false;
+				break;
+			case 1:
+				TouchRemove = true;
+				break;
+			default:
+				return;
+		}		
+		OSD::Notify("Mode:" + (TouchRemove ? Color::Orange << "Touch Remove" : Color::DeepSkyBlue << "Touch Drop"));
 	}
 
-	void	AutoDrop(MenuEntry *entry)
+	void	AutoDropRemove(MenuEntry *entry)
 	{
-        static bool Enabling = false;
+		static u16 Particles[2] = {0x214, 0x20C};
+		static bool Enabling = false;
 		Hook h;
 		u32 worldX, worldY, u0;
 
@@ -715,19 +807,60 @@ namespace CTRPluginFramework
 		if((entry->Hotkeys[0].IsPressed()))
 		{
 			Enabling = !Enabling;
-			OSD::Notify("Auto drop:" + (Enabling ? Color::Green << "ON" : Color::Red << "OFF"));
+			OSD::Notify("Auto " << (AutoRemove ? "remove:" : "drop:") + (Enabling ? Color::Green << "ON" : Color::Red << "OFF"));
 		}
-		if(Enabling)
+		if(Enabling && !Player::InLoadingState() && !MapEditorActive && !AnimExecuting)
 		{
-			if(Items::DropCheck(&worldX, &worldY, &u0, 0, 0) && !Player::InLoadingState() && !MapEditorActive && !AnimExecuting)
+			if(!AutoRemove)
 			{
-				Items::PlaceItemWrapper(DropType, ItemIDToReplace, &SeedersID, &SeedersID, worldX, worldY, 0, 0, 0, 0, 0, DropAnim, 0xA5);
+				if(Items::DropCheck(&worldX, &worldY, &u0, 0, 0))
+					Items::PlaceItemWrapper(DropType, ItemIDToReplace, (SeedersID & 0xFFFF) == 0x339F ? (u32 *)0x597870 : &SeedersID, &SeedersID, worldX, worldY, 0, 0, 0, 0, 0, DropAnim, 0xA5);
+			}
+			else if(AutoRemove)
+			{
+				float ParticleCoords[3];
+
+				if(!Player::GetWorldCoords(&worldX, &worldY))
+					return;
+
+				u8 x, y, z;
+				for(x = 0; x < 3; x++)
+				{
+					for(z = 0; z < 3; z++)
+					{
+						Items::TrampleAt((worldX - 1 + x), (worldY - 1 + z));
+						/*for(y = 0; y < 1; y++)
+						{
+							ParticleCoords[0] = Player::GetCoordinates()[0] + -32 + x * ParticleSpace;
+							ParticleCoords[1] = Player::GetCoordinates()[1] + 0 + y * ParticleSpace;
+							ParticleCoords[2] = Player::GetCoordinates()[2] + -32 + z * ParticleSpace;
+							Game::Particles(Particles[1], ParticleCoords);
+						}*/
+					}
+				}
 			}
 		}
 	}
 
-	void    DropModifier(MenuEntry *entry)
-    {
+	void    OptionAutoDropRemove(MenuEntry *entry)
+	{
+		s8 uchoice = OpenList("", {"Auto Drop", "Auto Remove"});
+		switch(uchoice)
+		{
+			case 0:
+				AutoRemove = false;
+				break;
+			case 1:
+				AutoRemove = true;
+				break;
+			default:
+				return;
+		}		
+		OSD::Notify("Mode:" + (AutoRemove ? Color::Orange << "Auto Remove" : Color::DeepSkyBlue << "Auto Drop"));
+	}
+
+	void	DropModifier(MenuEntry *entry)
+	{
 		static u8 Mode = 1;
 
 		if(entry->WasJustActivated())
@@ -735,7 +868,7 @@ namespace CTRPluginFramework
 			Process::Write32(USA_DropMode1_Address, 0xE1A00000);
 			Process::Write8(USA_DropMode2_Address, 6); // Set anim after bury
 		}
-        if(entry->Hotkeys[0].IsPressed())
+		if(entry->Hotkeys[0].IsPressed())
 		{
 			switch(Mode) 
 			{
@@ -778,7 +911,7 @@ namespace CTRPluginFramework
 					DropType = 0x7; //FillHole
 					DropAnim = 0x5D;
 					break;
-				case 7:
+				case 7: // should I keep this?
 					Mode = 0;
 					OSD::Notify("Drop Type:" << Color::Purple << "ShakeTree");
 					DropType = 0x9; //ShakeTree
@@ -789,7 +922,7 @@ namespace CTRPluginFramework
 			}
 			Process::Write8(USA_DropType_Address, DropType);
 		}
-    }
+	}
 
 	void    OptionDropModifier(MenuEntry *entry)
 	{
@@ -812,7 +945,6 @@ namespace CTRPluginFramework
 		}
 		else
 		{
-			// Bypass Items Locked
 			for(u8 i = 0; i < 4; i++)
 				Process::Write32(Addresses[i], Original[i]);
 			ByPassing = false;
@@ -929,7 +1061,7 @@ namespace CTRPluginFramework
 		if(Enabling)
 		{
 			Process::Write32(USA_PickUpItem_Address, 0x9E0000);
-			Process::Write32(USA_AlwaysPickUp_Address, 0xEA00003D);
+			Process::Patch(USA_AlwaysPickUp_Address, 0xEA00003D);
 			Process::Write32(USA_PickUpAnim_Address, 0xE3A01006);
 			Process::Write32(USA_PickUpInventoryFix_Address, 0xEA000008);
 			for(u8 i = 0; i < 8; i++)
@@ -949,7 +1081,7 @@ namespace CTRPluginFramework
                 Process::Write32(Addresses[i], Original[i]);
 			}
 			Process::Write32(USA_PickUpItem_Address, 0x95CFFC);
-			Process::Write32(USA_AlwaysPickUp_Address, 0x0A000044);
+			Process::Patch(USA_AlwaysPickUp_Address, 0x0A000044);
 			Process::Write32(USA_PickUpAnim_Address, 0xE3A01054);
 			Process::Write32(USA_PickUpInventoryFix_Address, 0x0A000008);
 
@@ -958,19 +1090,19 @@ namespace CTRPluginFramework
 		}
 	}
 
-	void	MapEditor(MenuEntry *entry)
+	void MapEditor(MenuEntry *entry)
 	{
-		if(Player::GetOffset() == 0)
-			return;
+		Clock ParticlesDelay;
+
+		if(!Player::IsLoaded())
+		{
+			if(MapEditorActive)
+				goto OFF;
+
+			return; //if player is not loaded return
+		}
 
 		static u32 DPadKeyPressedTicks = 0;
-		u8 size;
-		bool Removal = false;
-		u32 selectedX = 0, selectedY = 0;
-		float Y = *(float *)((u32)Player::GetCoordinates() + 4);
-		float ParticleCoords[3] = {0, Y, 0};
-		u16 ParticleID = 0x214;
-		u32 pItem;
 
 		if(entry->IsActivated())
 		{
@@ -981,57 +1113,46 @@ namespace CTRPluginFramework
 					Process::Write32(Camera::GetInstance() + 0xF0, 0x500);
 			}
 		}
-		
-		// Freeze values when cheat is ON
-		if(!MapEditorActive) // If Map Editor is OFF get coords
+		else if(!entry->IsActivated())
+			goto OFF;
+			
+		if(!MapEditorActive) //If Map Editor is OFF get Coords
 			Player::GetWorldCoords(&selectedX, &selectedY);
-
-		pItem = (u32)Items::GetItemAtWorldCoords(selectedX, selectedY, 0);
 		
 		if(entry->Hotkeys[0].IsPressed())
 		{
-			if(!MapEditorActive) // Map Editor ON
+			if(!MapEditorActive) //Map Editor ON
 			{
-				//Process::Write32(0x764504, 0xEA000020); //unlock camera
-				Process::Write32(USA_UnlockCamera_Address, 0xE8BD81F0);
-				OSD::Notify("Map Editor:" << Color::Green << "ON");
-
-				MapEditorActive = true;
 				Fov = true;
+				
+				if(Save)
+					Process::Patch(USA_SaveMenu_Address, 0xE1A00000);
+
+				Process::Patch(USA_UnlockCamera_Address, 0xE8BD81F0);
+				OSD::Notify("Map Editor:" << Color::Green << "ON");
+				MapEditorActive = true;
 
 				*(float *)(Camera::GetInstance() + 4) = (float)(selectedX * 0x20 + 0x10);
 				Camera::AddToY(90.0f);
 				*(float *)(Camera::GetInstance() + 0xC) = (float)(selectedY * 0x20 + 0x70);
 				Camera::AddToYRotation(0x700);
 			}
-			else // Map Editor OFF
-			{
-				if(Save)
-				{
-					Process::Write32(USA_SaveMenu_Address, 0xE8900006);
-					Process::Write32(0x1A0968, 0xE3A01040);
-					Process::Write32(0x1A096C, 0xE5900000);
-					Process::Write32(0x1A0970, 0xEB14D0AB);
-				}
-				
-				//Process::Write32(0x764504, 0x2A000020); //lock camera
-				Process::Write32(USA_UnlockCamera_Address, 0xE2805C01);
-				OSD::Notify("Map Editor:" << Color::Red << "OFF");
-
-				MapEditorActive = false;
+			else
+			{ 
+				OFF:
 				Fov = false;
+				
+				if(Save)
+					Process::Patch(USA_SaveMenu_Address, 0xE8900006);
+				
+				Process::Patch(USA_UnlockCamera_Address, 0xE2805C01);
+				OSD::Notify("Map Editor:" << Color::Red << "OFF");
+				MapEditorActive = false;
 			}
 		}
 		
 		if(MapEditorActive)
-		{
-			if(Save)
-			{
-				Process::Write32(USA_SaveMenu_Address, 0xE1A00000);
-				Process::Write32(0x1A0968, 0xE1A00000);
-     			Process::Write32(0x1A096C, 0xE3A00000);
-        		Process::Write32(0x1A0970, 0xEB0E069C);
-			}
+		{	
 			if(Controller::IsKeyDown(Key::DPadRight) || Controller::IsKeyPressed(Key::DPadRight))
 			{
 				DPadKeyPressedTicks++;
@@ -1041,6 +1162,7 @@ namespace CTRPluginFramework
 					Camera::AddToX(32.0f);
 				}
 			}
+			
 			if(Controller::IsKeyDown(Key::DPadLeft) || Controller::IsKeyPressed(Key::DPadLeft))
 			{
 				DPadKeyPressedTicks++;
@@ -1050,6 +1172,7 @@ namespace CTRPluginFramework
 					Camera::AddToX(-32.0f);
 				}
 			}
+			
 			if(Controller::IsKeyDown(Key::DPadDown) || Controller::IsKeyPressed(Key::DPadDown))
 			{
 				DPadKeyPressedTicks++;
@@ -1059,6 +1182,7 @@ namespace CTRPluginFramework
 					Camera::AddToZ(32.0f);
 				}
 			}
+			
 			if(Controller::IsKeyDown(Key::DPadUp) || Controller::IsKeyPressed(Key::DPadUp))
 			{
 				DPadKeyPressedTicks++;
@@ -1068,59 +1192,62 @@ namespace CTRPluginFramework
 					Camera::AddToZ(-32.0f);
 				}
 			}
+
 			if(Controller::IsKeyReleased(Key::DPadRight) || Controller::IsKeyReleased(Key::DPadLeft) || Controller::IsKeyReleased(Key::DPadDown) || Controller::IsKeyReleased(Key::DPadUp)) 
 				DPadKeyPressedTicks = 0;
+			
 			if(Controller::IsKeysPressed(Key::Start + Key::DPadDown))
 			{
-				size++;
-				if(size >= 3)
-					size = 0;
+				MapEditorsize++;
+				if(MapEditorsize >= 3)
+					MapEditorsize = 0;
 				
-				OSD::Notify("Size:" << Color::Yellow << std::to_string(size+1));
+				OSD::Notify("Size:" << Color::Yellow << std::to_string(MapEditorsize+1));
 			}
-			if(Controller::IsKeysPressed(Key::Start + Key::DPadLeft))
+			
+			if(Controller::IsKeysPressed(Key::Start + Key::DPadLeft)) 
 			{
-				Removal = !Removal;
+				MapEditorRemoval = !MapEditorRemoval;
 
-				OSD::Notify("Removal mode:" << (Removal ? Color::Green << "ON" : Color::Red << "OFF")); 
+				OSD::Notify("Removal mode:" << (MapEditorRemoval ? Color::Green << "ON" : Color::Red << "OFF"));
 			}
+			
 			if(Turbo ? Controller::IsKeyDown(Key::A) : Controller::IsKeyPressed(Key::A))
 			{
-				if(pItem == 0)
+				u32 *pItem = Items::GetItemAtWorldCoords(selectedX, selectedY);
+				
+				if(!pItem) 
 					return;
-
-				for(s8 i = -size; i <= size; i++)
+				
+				for(s8 i = -MapEditorsize; i <= MapEditorsize; ++i)
 				{
-					for(s8 j = -size; j <= size; j++)
+					for(s8 j = -MapEditorsize; j <= MapEditorsize; ++j)
 					{
-						if(!Removal) Items::PlaceItemWrapper(DropType, ItemIDToReplace, &SeedersID, &SeedersID, (selectedX + j), (selectedY + i), 0, 0, 0, 0, 0, DropAnim, 0xA5);
-						else Items::TrampleAt(selectedX + j, selectedY + i);
+						if(!MapEditorRemoval)
+							Items::PlaceItemWrapper(DropType, ItemIDToReplace, &SeedersID, &SeedersID, (selectedX + j), (selectedY + i), 0, 0, 0, 0, 0, DropAnim, 0xA5);
+						else 
+							Items::TrampleAt((selectedX + j), (selectedY + i)); 
 					}
 				}
 			}
-			for(s8 i = -size; i <= size; i++)
+
+			/*if(ParticlesDelay.HasTimePassed(Seconds(1)))
 			{
-				for(s8 j = -size; j <= size; j++)
+				static u16 Particles[2] = {0x214, 0x20C};
+				float ParticleCoords[3];
+
+				for(s8 i = -MapEditorsize; i <= MapEditorsize; ++i)
 				{
-					ParticleCoords[0] = (selectedX + j) * 0x20 + 0x10;
-					ParticleCoords[2] = (selectedY + i) * 0x20 + 0x10;
-					Game::Particles(ParticleID, ParticleCoords);
+					for(s8 j = -MapEditorsize; j <= MapEditorsize; ++j)
+					{
+						ParticleCoords[0] = (selectedX + j) * 0x20 + 0x10;
+						ParticleCoords[1] = Player::GetCoordinates()[1];
+						ParticleCoords[2] = (selectedY + i) * 0x20 + 0x10;
+						Game::Particles(Particles[MapEditorRemoval], ParticleCoords);
+					}
 				}
-			}
-		}
-		
-		if(!entry->IsActivated())
-		{ 
-			Fov = false;
-			Process::Write32(USA_UnlockCamera_Address, 0xE2805C01);
-				
-			if(Save)
-			{
-				Process::Write32(USA_SaveMenu_Address, 0xE8900006);
-				Process::Write32(0x1A0968, 0xE3A01040);
-				Process::Write32(0x1A096C, 0xE5900000);
-				Process::Write32(0x1A0970, 0xEB14D0AB);
-			}
+				ParticlesDelay.Restart();
+			}*/
 		}
 	}
 
@@ -1136,14 +1263,14 @@ namespace CTRPluginFramework
 			OSD::Notify("Trampler:" + (Enabling ? Color::Green << "ON" : Color::Red << "OFF"));
 			for(u8 i = 0; i < 6; i++) 
 			{
-				Enabling ? Process::Write32(addresses[i], patch[i]) : Process::Write32(addresses[i], original[i]);
+				Enabling ? Process::Patch(addresses[i], patch[i]) : Process::Patch(addresses[i], original[i]);
 			}
 		}
 		if(!entry->IsActivated())
 		{
 			for(u8 i = 0; i < 6; i++) 
 			{
-				Process::Write32(addresses[i], original[i]);
+				Process::Patch(addresses[i], original[i]);
 			}
 		}
 	}
@@ -1175,16 +1302,9 @@ namespace CTRPluginFramework
 		Hook h;
 		u32 x, y;
 
-		if(!entry->IsActivated() || !IsCatalogOpen)
-		{
-			if(Save)
-			{
-				Process::Write32(USA_SaveMenu_Address, 0xE1A00000);
-				Process::Write32(0x1A0968, 0xE1A00000);
-     			Process::Write32(0x1A096C, 0xE3A00000);
-        		Process::Write32(0x1A0970, 0xEB0E069C);
-			}
-		}
+		if((!entry->IsActivated() || !IsCatalogOpen) && Save)
+			Process::Patch(USA_SaveMenu_Address, 0xE1A00000);
+		
 		if(entry->Hotkeys[0].IsPressed() && !Player::InLoadingState() && !IsCatalogOpen && !MapEditorActive && !AnimExecuting)
 		{
 			Sleep(Seconds(1));
@@ -1206,33 +1326,46 @@ namespace CTRPluginFramework
 			IsCatalogOpen = true;
 
 			h.Enable();
-			Process::Write32(0x70E494, 0xE3A00000); // All items buyable
-			Process::Write32(0x70E494 + 4, 0xEA00000B); // All items buyable
+			Process::Patch(0x70E494, 0xE3A00000); // All items buyable
+			Process::Patch(0x70E494 + 4, 0xEA00000B); // All items buyable
 		}
 		else if(Player::GetCurrentInventory() != 0x7C && IsCatalogOpen)
 		{
 			Animation::ExecuteAnimationWrapper(Player::GetActualPlayerIndex(), 6, 0, 0, 0, 0, 0, false, 0);
 			IsCatalogOpen = false;
 		}
-		if (!entry->IsActivated() || !IsCatalogOpen)
+		if(!entry->IsActivated() || !IsCatalogOpen)
 		{
 			if(Save)
-			{
-				Process::Write32(USA_SaveMenu_Address, 0xE8900006);
-				Process::Write32(0x1A0968, 0xE3A01040);
-				Process::Write32(0x1A096C, 0xE5900000);
-				Process::Write32(0x1A0970, 0xEB14D0AB);
-			}
+				Process::Patch(USA_SaveMenu_Address, 0xE8900006);
 
 			h.Disable();
-			Process::Write32(0x70E494, 0x03A00001);		//0x70D4B4 EUR
-			Process::Write32(0x70E494 + 4, 0x0A00000B);	//0x70D4B4 EUR
+			Process::Patch(0x70E494, 0x03A00001);		//0x70D4B4 EUR
+			Process::Patch(0x70E494 + 4, 0x0A00000B);	//0x70D4B4 EUR
 
 			IsCatalogOpen = false;
 		}
 	}
 
-	void	DropAndDigAnywhere(MenuEntry *entry)
+	void	InfiniteDropPlant(MenuEntry *entry)
+	{
+		if(entry->WasJustActivated())
+		{
+			Process::Patch(0x19C574, 0xE2805A00); //drop
+			Process::Patch(0x19C4D0, 0xE2805A00); //plant
+			Process::Patch(0x19B02C, 0xE2805A00); //bury
+			Process::Patch(0x1A00F0, 0xE2805A00); //display
+		}
+		else if(!entry->IsActivated())
+		{
+			Process::Patch(0x19C574, 0xE2805A06); //drop
+			Process::Patch(0x19C4D0, 0xE2805A06); //plant
+			Process::Patch(0x19B02C, 0xE2805A06); //bury
+			Process::Patch(0x1A00F0, 0xE2805A06); //display
+		}
+	}
+
+	/*void	DropAndDigAnywhere(MenuEntry *entry)
 	{
 		if(entry->WasJustActivated())
 		{
@@ -1243,6 +1376,11 @@ namespace CTRPluginFramework
 			Process::Write32(0x165580, 0xEA000010); //on other players			//0x1655A0 EUR
 
 			// Dig
+			Process::Write32(0x5999F8, 0xE3A00001);
+			Process::Write32(0x599A0C, 0xE3A04013);
+			Process::Write32(0x6761B8, 0xE3A01050);
+			Process::Write32(0x676214, 0xE3A01050);
+			Process::Write32(0x67A2F4, 0x3414);
 		}
 		else if(!entry->IsActivated())
 		{
@@ -1252,7 +1390,7 @@ namespace CTRPluginFramework
 			Process::Write32(0x1654EC, 0x0A000005);
 			Process::Write32(0x165580, 0x0A000010); //on other players
 		}
-	}
+	}*/
 
 	/*
 	Animations Codes
@@ -1306,10 +1444,17 @@ namespace CTRPluginFramework
 					SetUpKB("Enter the ID of a sound." << Color::Lime << "\nHex: 0~FFE\nRandom sound = FFFF", true, 4, SoundID, SoundID);
 					break;
 				case 5: //Appearance
-					SetUpKB("Enter the ID of a hairstyle." << Color::Lime << "\nHex: 0~21", true, 2, Appearance[0], Appearance[0]);
-					SetUpKB("Enter the ID of a hairstyle color." << Color::Lime << "\nHex: 0~F", true, 1, Appearance[1], Appearance[1]);
-					SetUpKB("Enter the ID of an eye color." << Color::Lime << "\nHex: 0~4", true, 2, Appearance[2], Appearance[2]);
+				{
+					Part1:
+					if(!SetUpKB("Enter the ID of a hairstyle." << Color::Lime << "\nHex: 0~21", true, 2, Appearance[0], Appearance[0]))
+						break;
+					Part2:
+					if(!SetUpKB("Enter the ID of a hairstyle color." << Color::Lime << "\nHex: 0~F", true, 1, Appearance[1], Appearance[1]))
+						goto Part1;
+					if(!SetUpKB("Enter the ID of an eye color." << Color::Lime << "\nHex: 0~4", true, 2, Appearance[2], Appearance[2]))
+						goto Part2;
 					break;
+				}
 				case 6: //Custom Animation
 					SetUpKB("Enter the ID of a custom animation." << Color::Lime << "\nHex: D~E2" << Color::Magenta << "\nOperation button = " << Color::Green << "ON" << Color::White << "/" << Color::Red << "OFF", true, 2, C_AnimID, C_AnimID);
 					break;
@@ -1435,6 +1580,9 @@ namespace CTRPluginFramework
 					Animation::ExecuteAnimationWrapper(Player::GetOnlinePlayerIndex() & 3, 6, 0, 0, 0, 0, 0, false, 0);
 					break;
 				case 5: //Appearance
+					if(Appearance[0] > 0x21 || Appearance[1] > 0xF || Appearance[2] > 4)
+						return;
+					
 					Animation::ExecuteAnimationWrapper(Player::GetOnlinePlayerIndex() & 3, 0xB9, 0, 0, 0, 0, 0, wX + offsetX, wY + offsetY, false, Appearance);
 					Sleep(Seconds(2));
 					Animation::ExecuteAnimationWrapper(Player::GetOnlinePlayerIndex() & 3, 6, 0, 0, 0, 0, 0, false, 0);
@@ -1453,7 +1601,7 @@ namespace CTRPluginFramework
 						if(val == 0xE3A050) // Only if custom animation was enabled
 							OSD::Notify("Custom Animation:" << Color::Red << "OFF");
 						
-						Process::Write32(0x64DCB0, 0xE1A02005); //Disable Custom Animation
+						Process::Patch(0x64DCB0, 0xE1A02005); //Disable Custom Animation
 						EnablingC = false;
 					}	
 					Button = true;
@@ -1474,10 +1622,10 @@ namespace CTRPluginFramework
 		}
 
 		if(Enabling && EnablingC && IDList::CustomAnimValid(C_AnimID) && (Index == 6))
-			Process::Write32(0x64DCB0, 0xE3A05000 + C_AnimID); // Enable Custom Animation
+			Process::Patch(0x64DCB0, 0xE3A05000 + C_AnimID); // Enable Custom Animation
 		else
 		{
-			Process::Write32(0x64DCB0, 0xE1A02005); // Disable Custom Animation
+			Process::Patch(0x64DCB0, 0xE1A02005); // Disable Custom Animation
 			EnablingC = false;
 		}	
 
@@ -1485,7 +1633,7 @@ namespace CTRPluginFramework
 			Button = false;
 
 		if(!entry->IsActivated() || Player::InLoadingState())
-			Process::Write32(0x64DCB0, 0xE1A02005); // Disable Custom Animation
+			Process::Patch(0x64DCB0, 0xE1A02005); // Disable Custom Animation
 	}
 
 	void	ForceAnimationsToOthers(MenuEntry *entry)
@@ -1592,16 +1740,17 @@ namespace CTRPluginFramework
 				return;
 
 			u32 PlayerInstance = Player::GetOffset();
-			u32 AnimInstance = Player::GetAnimationInstance(PlayerInstance, 0, 0, 0);
+			u32 AnimInstance;
 
 			Process::Write32(0x677504, 0xE1A00000); //0x67653C EUR
 			Process::Write32(0x628B54, 0xE3A01000 + DATAIndexRandom); //0x627B8C EUR
 			
 			for(u8 i = 0; i < 4; i++)
 			{
+				AnimInstance = Player::GetAnimationInstance(PlayerInstance, 0, 0, 0);
         		Animation::DoMoonJump(AnimInstance, PlayerInstance);
 				
-				if((Player::GetOnlinePlayerIndex() & 3) == Player::GetActualPlayerIndex())
+				if(i == Player::GetActualPlayerIndex())
 					Animation::ExecuteAnimation(PlayerInstance, 0xC4, AnimInstance);
 				else 
 					Animation::SendPacket(i, AnimInstance, 0xC4, Player::ActualRoom(i), i);
@@ -1614,12 +1763,12 @@ namespace CTRPluginFramework
 		}
 	}
 
-	void    InfiniteExpression(MenuEntry *entry)
+	void    InfiniteExpression(MenuEntry *entry) //Only visible by you?
     {
         if(entry->IsActivated())
-			Process::Write32(0x65E9B0, 0xE3A010FF); //0x65D9E8 EUR
+			Process::Patch(0x65E9B0, 0xE3A010FF); //0x65D9E8 EUR
 		else if(!entry->IsActivated())
-			Process::Write32(0x65E9B0, 0xE1D010B0);
+			Process::Patch(0x65E9B0, 0xE1D010B0);
 	}
 
 	void	SlowMotionAnim(MenuEntry *entry)
@@ -1630,21 +1779,21 @@ namespace CTRPluginFramework
 			{
 				Process::WriteFloat(0x652C10, 8.0); //0x651C48 EUR
 				Process::WriteFloat(0x887880, 6.0); //0x88670C EUR
-				Process::Write32(0x654578, 0xE3A00001); //0x6535B0 EUR
+				Process::Patch(0x654578, 0xE3A00001); //0x6535B0 EUR
 			}
 			if(!entry->IsActivated())
 			{
 				Process::WriteFloat(0x652C10, 1.0);
 				Process::WriteFloat(0x887880, 1.0);
-				Process::Write32(0x654578, 0x0A000004);
+				Process::Patch(0x654578, 0x0A000004);
         	}
 		}
 	}
 
 	u32 AntiAnimCheck(u32 pID)
 	{
-	    u32 PlayerInstance = Player::GetOffset(pID);
-	    if(PlayerInstance == Player::GetOffset())
+	    u32 PlayerInstance = Player::GetOffset(pID, 0);
+	    if(PlayerInstance == Player::GetOffset(4, 0))
 		    return 0;
 
 	    return PlayerInstance; 
@@ -1669,7 +1818,7 @@ namespace CTRPluginFramework
 
 	void    NPCMenu(MenuEntry *entry)
 	{
-		std::string SelectedNPCname = "";
+		static std::string SelectedNPCname = "";
 
 		if(entry->WasJustActivated()) 
 		{
@@ -1708,7 +1857,7 @@ namespace CTRPluginFramework
 				}
 				case 1:
 				{
-					NPCdataVector NPCList;
+					NPC_DataVector NPCList;
 					StringVector NPCLoadedList;
 
 					NPC::GetLoadedNPC(NPCList);
@@ -1719,7 +1868,7 @@ namespace CTRPluginFramework
 						return;
 					}
 
-					for(NPCdata& str : NPCList) // Add all loaded npcs into a list
+					for(NPC_Data& str : NPCList) // Add all loaded npcs into a list
 						NPCLoadedList.push_back(str.name);
 
 					s8 selectednpc = OpenList("Select Loaded NPC:", NPCLoadedList); // Open the loaded npcs list
@@ -1815,7 +1964,7 @@ namespace CTRPluginFramework
 
 	void	NPCCoordinates(MenuEntry *entry)
 	{
-		if(Player::InLoadingState() && (CurrentNPCAddress == 0))
+		if(Player::InLoadingState() || (CurrentNPCAddress == 0))
 			return;
 
 		float *NPCCoords = (float *)(CurrentNPCAddress + 0x14);
@@ -1916,7 +2065,7 @@ namespace CTRPluginFramework
 		{
 			u8 Acre = 0;
 
-			switch (Player::ActualRoom())
+			switch(Player::ActualRoom())
 			{
 				case 0:
 					for(u8 j = 0; j < 5; j++)
@@ -1954,19 +2103,21 @@ namespace CTRPluginFramework
 
 	void    WeatherMod(MenuEntry *entry)
     {
-		const u32 value = 0xE3A00000;
+		constexpr u32 value = 0xE3A00000;
 
 		s8 uchoice = OpenList("Choose the weather you want.", WeatherOpt);
 		if(uchoice < 0)
 			return;
 
 		if(uchoice == 7)
-			Process::Write32(USA_Weather_Address, 0xE1A00004);
-		else
 		{
-			Process::Write32(USA_Weather_Address, value + uchoice);
-			OSD::Notify("Meteo:" + WeatherOpt[uchoice]);
+			Process::Patch(USA_Weather_Address, 0xE1A00004);
+			return;
 		}
+			
+		Process::Patch(USA_Weather_Address, value + uchoice);
+		OSD::Notify("Meteo:" + WeatherOpt[uchoice]);
+		WeatherMod(entry);
 	}
 
     void	SeasonMod(MenuEntry *entry)
@@ -1978,7 +2129,7 @@ namespace CTRPluginFramework
 		if(uchoice < 0)
 			return;
 		
-		Process::Write32(USA_Saison_Address, value + offsets[uchoice]);
+		Process::Patch(USA_Saison_Address, value + offsets[uchoice]);
 		OSD::Notify("Season:" + SaisonsOpt[uchoice]);
 
 		Game::AskReloadRoom();
@@ -1993,10 +2144,12 @@ namespace CTRPluginFramework
 			return;
 
 		if(*(u16 *)USA_Festival_Address == 0)
+		{
+			OSD::Notify("There actually is no festival!");
 			return;
+		}
 
-		Process::Write16(USA_Festival_Address, Festivals[uchoice]);
-		Process::Write8(USA_Festival_Address + 2, 0x9B);
+		Process::Patch(USA_Festival_Address, 0x9B0000 + Festivals[uchoice]);
 		OSD::Notify("Festival:" << Color::Lime << FestivalsOpt[uchoice]);
 
 		Game::AskReloadRoom();
@@ -2086,13 +2239,7 @@ namespace CTRPluginFramework
 
 	void	IslandItemsSaves(MenuEntry *entry)
     {
-		static u32Vector IslandItemsCopyPaste;
-		u32Vector IslandItemsDumpRestore;
-    	std::string IslandName;
-		
-        StringVector IslandsList;
-
-		if (entry->Hotkeys[0].IsPressed())
+		if(entry->Hotkeys[0].IsPressed())
         {
 			if(Player::InLoadingState())
 				return;
@@ -2104,39 +2251,46 @@ namespace CTRPluginFramework
 			}
 
 			s8 uchoice = OpenList("Choose an option:" << Color::Yellow << "\n\nIsland Items Saves", IslandItemsOpt);
-			if(uchoice == 0)
+			switch(uchoice)
 			{
-				if(Game::GetMapItemsCount(false))
-                {
-                    if(!IslandItemsCopyPaste.empty())
-					IslandItemsCopyPaste.clear();
-
-                    IslandItemsCopyPaste = Game::GetMapItems(true);
-					OSD::Notify(Color::Magenta << "Ctrl+C");
+				case 0:
+				{
+					if(Game::GetMapItemsCount(false))
+					{
+						if(!IslandItems.empty())
+						IslandItems.clear();
+	
+						IslandItems = Game::GetMapItems(true);
+						OSD::Notify(Color::Magenta << "Ctrl+C");
+					}
+					else
+						OSD::Notify(Color::Yellow << "This island is empty!");
+					break;
 				}
-				else
-					OSD::Notify(Color::Yellow << "This island is empty!");
-			}
-			else if(uchoice == 1)
-			{
-				if(!IslandItemsCopyPaste.empty())
-                {
-                    u32 X = 0x10, Y = 0x10, Count = 0;
+				case 1:
+				{
+					if(IslandItems.empty())
+					{
+						OSD::Notify(Color::Yellow << "There is nothing to past!");
+						return;
+					}
+
+					u32 X = 0x10, Y = 0x10, Count = 0;
                     s32 i = -1;
                     bool Check = true;
 
                     Sleep(Milliseconds(500));
-                    Process::Write32(0x5A11C8, 0xE3E00000); //0x5A0210 EUR
-					Process::Write32(0x5A11CC, 0xEA000012); //0x5A0214 EUR
-					Process::Write32(0x5A13C8, 0xE3A00000); //0x5A0410 EUR
-					Process::Write32(0x5A13CC, 0xE8BD83F0); //0x5A0414 EUR
+                    Process::Patch(USA_ByPassItemDrop1_Address, 0xE3E00000); //0x5A0210 EUR
+					Process::Patch(USA_ByPassItemDrop2_Address, 0xEA000012); //0x5A0214 EUR
+					Process::Patch(USA_ByPassItemDrop3_Address, 0xE3A00000); //0x5A0410 EUR
+					Process::Patch(USA_ByPassItemDrop4_Address, 0xE8BD83F0); //0x5A0414 EUR
                     while(Check)
                     {
                         while(Check)
                         {
                             if((u32)Items::GetItemAtWorldCoords(X, Y))
                             {  
-                                if(i != IslandItemsCopyPaste.size())
+                                if(i != IslandItems.size())
                                     i++;
 
                                 if(*Items::GetItemAtWorldCoords(X, Y) == 0x80007FFE)
@@ -2145,9 +2299,9 @@ namespace CTRPluginFramework
                                 if(Items::GetLockedSpotIndex(X, Y) != 0xFFFFFFFF)
                                     Items::ClearLockedSpot(X, Y, 0xA5);
 
-                                if(*Items::GetItemAtWorldCoords(X, Y) != IslandItemsCopyPaste.at(i))
+                                if(*Items::GetItemAtWorldCoords(X, Y) != IslandItems.at(i))
                                 {
-                                    if(Items::PlaceItemWrapper(0x1, 0xFFFFFFFF, &IslandItemsCopyPaste.at(i), &IslandItemsCopyPaste.at(i), X, Y, 0, 0, 0, 0, 0, 0x3D, 0xA5))
+                                    if(Items::PlaceItemWrapper(0x1, 0xFFFFFFFF, &IslandItems.at(i), &IslandItems.at(i), X, Y, 0, 0, 0, 0, 0, 0x3D, 0xA5))
                                         Count++;
                                 }
                             }
@@ -2163,150 +2317,157 @@ namespace CTRPluginFramework
                     }
                     if(ByPassing == false)
 					{
-						Process::Write32(0x5A11C8, 0xE1A05001);
-						Process::Write32(0x5A11CC, 0x1A000001);
-						Process::Write32(0x5A13C8, 0xE24DD01C);
-						Process::Write32(0x5A13CC, 0xE1A07001);
+						Process::Patch(USA_ByPassItemDrop1_Address, 0xE1A05001);
+						Process::Patch(USA_ByPassItemDrop2_Address, 0x1A000001);
+						Process::Patch(USA_ByPassItemDrop3_Address, 0xE24DD01C);
+						Process::Patch(USA_ByPassItemDrop4_Address, 0xE1A07001);
 					}
 					OSD::Notify(Color::Purple << "Ctrl+V");
+					break;
 				}
-
-			}
-			else if(uchoice == 2)
-			{
-				Directory Luna("Luna", true); //create the directory if it doesn't exist
-				Directory dir("Luna/IslandSaves", true); //create the directory if it doesn't exist
-
-        		if(Game::GetMapItemsCount(false))
-        		{
-					File IslandBackup;
-
-					if(!IslandItemsDumpRestore.empty())
-						IslandItemsDumpRestore.clear();
-
-					IslandItemsDumpRestore = Game::GetMapItems(true);
-
-            		if(SetUpKB("Name your backup." << Color::Yellow << "\n\nIsland Items Dumper", false, 20, IslandName, "", 0))
-            		{
-                		if(!File::Exists("Luna/IslandSaves/" + IslandName + ".bin"))
-                		{
-                    		File::Create("Luna/IslandSaves/" + IslandName + ".bin");
-                    		File::Open(IslandBackup, "Luna/IslandSaves/" + IslandName + ".bin", File::WRITE | File::SYNC);
-
-                    		for(int i = 0; i != IslandItemsDumpRestore.size(); i++)
-                        		IslandBackup.Write(&IslandItemsDumpRestore.at(i), 4);
-
-							MessageBox("Created file at:\n" << Color::Yellow << "Luna/IslandSaves/" + IslandName + ".bin").SetClear(ClearScreen::Top)();
-                    		IslandBackup.Close();
-                		}
-                		else
-                		{
-                    		Sleep(Milliseconds(200));
-                    		if(MessageBox(Color::Lime << IslandName + ".bin" << Color::White << " already exist!\n\n" << Color::Yellow << "Do you want to replace it?", DialogType::DialogYesNo)())
-                    		{
-                        		File::Open(IslandBackup, "Luna/IslandSaves/" + IslandName + ".bin", File::WRITE | File::SYNC);
-
-                        		for(int i = 0; i != IslandItemsDumpRestore.size(); i++)
-                            		IslandBackup.Write(&IslandItemsDumpRestore.at(i), 4);
-
-                        		IslandBackup.Close();
-
-                        		OSD::Notify("Updated file:" << Color::Lime << IslandName + ".bin");
-                    		}
-                		}
-            		}
-				}
-				else
-					OSD::Notify(Color::Yellow << "This island is empty!");
-			}
-			else if (uchoice == 3)
-			{
-				Directory Luna("Luna", true); //create the directory if it doesn't exist
-				Directory dir("Luna/IslandSaves", true); // create the directory if it doesn't exist
-
-        		Directory::Open(dir, "Luna/IslandSaves");
-        		dir.ListFiles(IslandsList, ".bin");
-
-        		if(IslandsList.empty())
-        		{
-            		OSD::Notify(Color::Yellow << "No backup is available!");
-            		dir.Close();
-            		return;
-        		}
-
-				File IslandFile;
-
-				Keyboard IslandListKB("Select the backup to restore.");
-        		IslandListKB.Populate(IslandsList);
-
-        		int User_Choice = IslandListKB.Open();
-
-        		if(User_Choice < 0)
-            		return;
-
-        		dir.OpenFile(IslandFile, IslandsList.at((size_t)User_Choice), File::READ | File::SYNC);
-        		IslandItemsDumpRestore.clear();
-        		IslandItemsDumpRestore.resize(1024);
-
-        		OSD::Notify(Color::DeepSkyBlue << "Loading...");
-
-        		for(int i = 0; i != IslandItemsDumpRestore.size(); i++)
-            		IslandFile.Read(&IslandItemsDumpRestore.at(i), 4);
-
-        		dir.Close();
-        		IslandFile.Close();
-
-				u32 X = 0x10, Y = 0x10, Count = 0;
-				s32 i = -1;
-				bool Check = true;
-
-				Sleep(Milliseconds(500));
-                Process::Write32(0x5A11C8, 0xE3E00000);
-				Process::Write32(0x5A11CC, 0xEA000012);
-				Process::Write32(0x5A13C8, 0xE3A00000);
-				Process::Write32(0x5A13CC, 0xE8BD83F0);
-				while(Check)
-                {
-                    while(Check)
-                    {
-                        if((u32)Items::GetItemAtWorldCoords(X, Y))
-                        {  
-                            if(i != IslandItemsDumpRestore.size())
-                                i++;
-
-                            if(*Items::GetItemAtWorldCoords(X, Y) == 0x80007FFE)
-                                Items::TrampleAt(X, Y);
-
-                            if(Items::GetLockedSpotIndex(X, Y) != 0xFFFFFFFF)
-                                Items::ClearLockedSpot(X, Y, 0xA5);
-
-                            if(*Items::GetItemAtWorldCoords(X, Y) != IslandItemsDumpRestore.at(i))
-                            {
-                                if(Items::PlaceItemWrapper(0x1, 0xFFFFFFFF, &IslandItemsDumpRestore.at(i), &IslandItemsDumpRestore.at(i), X, Y, 0, 0, 0, 0, 0, 0x3D, 0xA5))
-                                    Count++;
-                            }
-                        }
-                        else
-							Check = false;
-                        Y++;
-					}
-                    Check = true;
-                    Y = 0x10;
-                    X++;
-                    if(!(u32)Items::GetItemAtWorldCoords(X, Y))
-                        Check = false;
-                }
-				if(ByPassing == false)
+				case 2:
 				{
-					Process::Write32(0x5A11C8, 0xE1A05001);
-					Process::Write32(0x5A11CC, 0x1A000001);
-					Process::Write32(0x5A13C8, 0xE24DD01C);
-					Process::Write32(0x5A13CC, 0xE1A07001);
+					Directory Luna("Luna", true); //create the directory if it doesn't exist
+					Directory dir("Luna/IslandSaves", true); //create the directory if it doesn't exist
+	
+					if(Game::GetMapItemsCount(false))
+					{
+						File IslandBackup;
+	
+						if(!IslandItems.empty())
+							IslandItems.clear();
+	
+						IslandItems = Game::GetMapItems(true);
+						
+						std::string IslandName;
+						if(SetUpKB("Name your backup." << Color::Yellow << "\n\nIsland Items Dumper", false, 20, IslandName, "", 0))
+						{
+							if(!File::Exists("Luna/IslandSaves/" + IslandName + ".bin"))
+							{
+								File::Create("Luna/IslandSaves/" + IslandName + ".bin");
+								File::Open(IslandBackup, "Luna/IslandSaves/" + IslandName + ".bin", File::WRITE | File::SYNC);
+	
+								for(int i = 0; i != IslandItems.size(); i++)
+									IslandBackup.Write(&IslandItems.at(i), 4);
+	
+								MessageBox("Created file at:\n" << Color::Yellow << "Luna/IslandSaves/" + IslandName + ".bin").SetClear(ClearScreen::Top)();
+								IslandBackup.Close();
+							}
+							else
+							{
+								Sleep(Milliseconds(200));
+								if(MessageBox(Color::Lime << IslandName + ".bin" << Color::White << " already exist!\n\n" << Color::Yellow << "Do you want to replace it?", DialogType::DialogYesNo)())
+								{
+									File::Open(IslandBackup, "Luna/IslandSaves/" + IslandName + ".bin", File::WRITE | File::SYNC);
+	
+									for(int i = 0; i != IslandItems.size(); i++)
+										IslandBackup.Write(&IslandItems.at(i), 4);
+	
+									IslandBackup.Close();
+	
+									OSD::Notify("Updated file:" << Color::Lime << IslandName + ".bin");
+								}
+							}
+						}
+					}
+					else
+						OSD::Notify(Color::Yellow << "This island is empty!");
+					break;
 				}
-				OSD::Notify("Readed file:" << Color::Lime << IslandsList.at((size_t)User_Choice));
-		    }
+				case 3:
+				{
+					Directory Luna("Luna", true); //create the directory if it doesn't exist
+					Directory dir("Luna/IslandSaves", true); // create the directory if it doesn't exist
+	
+					StringVector IslandsList;
+					Directory::Open(dir, "Luna/IslandSaves");
+					dir.ListFiles(IslandsList, ".bin");
+	
+	
+					if(IslandsList.empty())
+					{
+						OSD::Notify(Color::Yellow << "No backup is available!");
+						dir.Close();
+						return;
+					}
+	
+					File IslandFile;
+	
+					Keyboard IslandListKB("Select the backup to restore.");
+					IslandListKB.Populate(IslandsList);
+	
+					int User_Choice = IslandListKB.Open();
+	
+					if(User_Choice < 0)
+						return;
+	
+					dir.OpenFile(IslandFile, IslandsList.at((size_t)User_Choice), File::READ | File::SYNC);
+					IslandItems.clear();
+					IslandItems.resize(1024);
+	
+					OSD::Notify(Color::DeepSkyBlue << "Loading...");
+	
+					for(int i = 0; i != IslandItems.size(); i++)
+						IslandFile.Read(&IslandItems.at(i), 4);
+	
+					dir.Close();
+					IslandFile.Close();
+	
+					u32 X = 0x10, Y = 0x10, Count = 0;
+					s32 i = -1;
+					bool Check = true;
+	
+					Sleep(Milliseconds(500));
+					Process::Patch(USA_ByPassItemDrop1_Address, 0xE3E00000);
+					Process::Patch(USA_ByPassItemDrop2_Address, 0xEA000012);
+					Process::Patch(USA_ByPassItemDrop3_Address, 0xE3A00000);
+					Process::Patch(USA_ByPassItemDrop4_Address, 0xE8BD83F0);
+					while(Check)
+					{
+						while(Check)
+						{
+							if((u32)Items::GetItemAtWorldCoords(X, Y))
+							{  
+								if(i != IslandItems.size())
+									i++;
+	
+								if(*Items::GetItemAtWorldCoords(X, Y) == 0x80007FFE)
+									Items::TrampleAt(X, Y);
+	
+								if(Items::GetLockedSpotIndex(X, Y) != 0xFFFFFFFF)
+									Items::ClearLockedSpot(X, Y, 0xA5);
+	
+								if(*Items::GetItemAtWorldCoords(X, Y) != IslandItems.at(i))
+								{
+									if(Items::PlaceItemWrapper(0x1, 0xFFFFFFFF, &IslandItems.at(i), &IslandItems.at(i), X, Y, 0, 0, 0, 0, 0, 0x3D, 0xA5))
+										Count++;
+								}
+							}
+							else
+								Check = false;
+							Y++;
+						}
+						Check = true;
+						Y = 0x10;
+						X++;
+						if(!(u32)Items::GetItemAtWorldCoords(X, Y))
+							Check = false;
+					}
+					if(ByPassing == false)
+					{
+						Process::Patch(USA_ByPassItemDrop1_Address, 0xE1A05001);
+						Process::Patch(USA_ByPassItemDrop2_Address, 0x1A000001);
+						Process::Patch(USA_ByPassItemDrop3_Address, 0xE24DD01C);
+						Process::Patch(USA_ByPassItemDrop4_Address, 0xE1A07001);
+					}
+					OSD::Notify("Readed file:" << Color::Lime << IslandsList.at((size_t)User_Choice));
+					break;
+				}
+				default:
+					break;
+			}
 		}
-    }
+	}
 
 	void	OnlineIslandAcresCreator(MenuEntry *entry)
 	{
@@ -2388,6 +2549,12 @@ namespace CTRPluginFramework
 		}
 	}
 
+	void	OnIslandBuildingChange(Keyboard &k, KeyboardEvent &e)
+	{
+		std::string& s = k.GetInput();
+		k.GetMessage() = "Enter ID of a building:\n\nID entered: " << IDList::GetBuildingName(s != "" ? std::stoi(s, nullptr, 16) : 0);
+	}
+
 	void    MenuOnlineIslandBuildingMod(MenuEntry *entry)
 	{
 		StringVector list =
@@ -2402,16 +2569,28 @@ namespace CTRPluginFramework
 	        "Set coordinates",
 	    };
 
+		redo:
 		s8 uchoice = OpenList("", list);
+		if(uchoice < 0)
+			return;
 		s8 uchoice2 = OpenList("", list2);
-		if(uchoice2 == 0)
+		switch(uchoice2)
 		{
-			SetUpKB("Entre l'ID d'un batiment:", true, 2, isl.b[uchoice].id, isl.b[uchoice].id);
-		}
-		else if(uchoice2 == 1)
-		{
-			SetUpKB("Entrer coordinates " << Color::Yellow << "\"X\"" << Color::White << " of building:", true, 2, isl.b[uchoice].x, isl.b[uchoice].x);
-			SetUpKB("Entrer coordinates " << Color::Yellow << "\"Y\"" << Color::White << " of building:", true, 2, isl.b[uchoice].y, isl.b[uchoice].y);
+			case 0:
+			{
+				SetUpKB("Enter ID of a building:\n\nID entered: ", true, 2, isl.b[uchoice].id, isl.b[uchoice].id, OnIslandBuildingChange);
+			}
+			break;
+			case 1:
+				AskX:
+				SetUpKB("Entrer coordinates " << Color::Yellow << "\"X\"" << Color::White << " of building:", true, 2, isl.b[uchoice].x, isl.b[uchoice].x);
+				if(!SetUpKB("Entrer coordinates " << Color::Yellow << "\"Y\"" << Color::White << " of building:", true, 2, isl.b[uchoice].y, isl.b[uchoice].y))
+					goto AskX;
+				break;
+			
+			default:
+				goto redo;
+				break;
 		}
 	}
 
@@ -2470,7 +2649,7 @@ namespace CTRPluginFramework
 
 	void 	IslandRegionSpoofer(MenuEntry *entry)
 	{
-		const u8 CountryListID[2] = {0, 0xFF};
+		const u8 CountryListID[10] = {0, 0x4D, 0x12, 0x6E, 0x31, 0x01, 0xA0, 0x41, 0x24, 0xFF};
 
 		s8 uchoice = OpenList("Choose the island you want to go on.", CountryOpt);
 		if(uchoice < 0)
@@ -2488,19 +2667,19 @@ namespace CTRPluginFramework
     {
         if(entry->WasJustActivated()) 
 		{
-			Process::Write32(USA_Tours_Address, 0xE1A00000); //unsure? (still keeping it for safety)
-			Process::Write32(USA_Tours_Address + 0x54, 0xE1A00000); //Adds tour difficulty
-			Process::Write32(USA_Tours_Address + 0xD0, 0xE1A00000); //Adds tour names and tour infos
-			Process::Write32(USA_Tours_Address + 0x138, 0xE1A00000); //Adds tour time
-			Process::Write32(USA_Tours_Address + 0xA8, 0xE2800001); //Adds all tours to be selectable
+			Process::Patch(USA_Tours_Address, 0xE1A00000); //unsure? (still keeping it for safety)
+			Process::Patch(USA_Tours_Address + 0x54, 0xE1A00000); //Adds tour difficulty
+			Process::Patch(USA_Tours_Address + 0xD0, 0xE1A00000); //Adds tour names and tour infos
+			Process::Patch(USA_Tours_Address + 0x138, 0xE1A00000); //Adds tour time
+			Process::Patch(USA_Tours_Address + 0xA8, 0xE2800001); //Adds all tours to be selectable
 		}
 		else if(!entry->IsActivated()) 
 		{
-			Process::Write32(USA_Tours_Address, 0x0A000004);
-			Process::Write32(USA_Tours_Address + 0x54, 0x0A000004);
-			Process::Write32(USA_Tours_Address + 0xD0, 0x0A000004);
-			Process::Write32(USA_Tours_Address + 0x138, 0x0A000004); 
-			Process::Write32(USA_Tours_Address + 0xA8, 0x12800001);
+			Process::Patch(USA_Tours_Address, 0x0A000004);
+			Process::Patch(USA_Tours_Address + 0x54, 0x0A000004);
+			Process::Patch(USA_Tours_Address + 0xD0, 0x0A000004);
+			Process::Patch(USA_Tours_Address + 0x138, 0x0A000004); 
+			Process::Patch(USA_Tours_Address + 0xA8, 0x12800001);
 		}
     }
 
@@ -2555,7 +2734,7 @@ namespace CTRPluginFramework
 
   		for(u8 i = 0; i < 4; i++)
 		{
-    		Address = Player::GetPlayerSave(i);
+    		Address = Player::GetSaveOffset(i);
     		if(Address == 0)
 			{
       			if(!HasSet[i])
@@ -2617,11 +2796,15 @@ namespace CTRPluginFramework
 
 	void	KeyboardExtender(MenuEntry *entry)
 	{
-		if(entry->IsActivated())
+		if(entry->IsActivated() && Chat::IsOpen())
 		{
+			u32 KbExtenderAddr = *(u32 *)USA_Chat_Pointer;
+			if(KbExtenderAddr == 0)
+				return;
+			
+            Process::Write8(KbExtenderAddr + 0xC, 0x41);
+            Process::Write8(KbExtenderAddr + 0x12B, 0x44);
 			KbExtender = true;
-            Process::Write8(USA_Chat_Pointer + 0xC, 0x41);
-            Process::Write8(USA_Chat_Pointer + 0x12B, 0x44);
 		}
 		if(!entry->IsActivated())
 		{
@@ -2731,32 +2914,189 @@ namespace CTRPluginFramework
 
 	void	CameraMod(MenuEntry *entry)
     {
-        
+		static bool isOn = false;
+
+		static const u16 OriginalVal[2] = { *(u16 *)(Camera::GetInstance() + 0x12C), *(u16 *)(Camera::GetInstance() + 0x12E) };
+		
+		static Clock time;
+        Time delta = time.Restart();
+
+        float speed = 400.0f * delta.AsSeconds() * CamSpeed;
+        u16 difference = 0x1000 * delta.AsSeconds() * CamSpeed;
+
+		float *coord = Camera::GetCoordinates();
+
+		if(entry->WasJustActivated()) 
+			Process::Patch(USA_CameraPan_Address, 0xE3A00000); //disables camera panning
+
+		if(!entry->IsActivated() || MapEditorActive)
+		{
+			if(coord != nullptr)
+				coord = Player::GetCoordinates();
+
+			Animation::ExecuteAnimationWrapper(Player::GetActualPlayerIndex(), 6, 0, 0, 0, 0, 0, false, 0); //idles player
+			Process::Patch(USA_ASM_Camera, 0x2A000020); //0x76350C EUR
+			Process::Patch(USA_ASM_CameraRotation, 0xE18020B4); //0x1A3250 EUR
+            Process::Write32(USA_ASM_CameraRotation + 0xC, 0xE18020B4);
+			Process::Patch(USA_CameraPan_Address, 0xE3A00009); //0x1A2078 EUR
+			*(u16 *)(Camera::GetInstance() + 0x12C) = OriginalVal[0];
+			*(u16 *)(Camera::GetInstance() + 0x12E) = OriginalVal[1];
+			return;
+		}
+	
+        if(Camera::GetInstance() != 0)
+		{
+            if(!Player::IsIndoor()) //check if you're outside
+			{
+                if(Player::IsInRoom(1))
+				{
+                    Process::Patch(USA_ASM_CameraRotation, 0xE18020B4);
+                    Process::Patch(USA_ASM_CameraRotation + 0xC, 0xE18020B4);
+                }
+                else
+				{
+                    Process::Patch(USA_ASM_CameraRotation, 0xE1A00000);
+                    Process::Patch(USA_ASM_CameraRotation + 0xC, 0xE1A00000);
+                }
+            }
+            else
+			{
+                Process::Patch(USA_ASM_CameraRotation, 0xE18020B4);
+                Process::Patch(USA_ASM_CameraRotation + 0xC, 0xE18020B4);
+            }
+			
+            if(entry->Hotkeys[0].IsDown()) //R
+			{
+                if(Controller::IsKeyDown(Key::CPadUp))
+                    *(u16 *)(Camera::GetInstance() + 0x12C) += difference;
+                if(Controller::IsKeyDown(Key::CPadDown))
+                   *(u16 *)(Camera::GetInstance() + 0x12C) -= difference;
+                if(Controller::IsKeyDown(Key::CPadLeft))
+                    *(u16 *)(Camera::GetInstance() + 0x12E) += difference;
+                if(Controller::IsKeyDown(Key::CPadRight))
+                    *(u16 *)(Camera::GetInstance() + 0x12E) -= difference;
+            }
+
+			if(entry->Hotkeys[1].IsDown()) //B
+			{
+				if(Player::InLoadingState() || (coord == nullptr))
+					return;
+
+				if(Controller::IsKeyDown(Key::DPadUp))
+				{
+					coord[2] -= speed;
+					goto patch;
+				}
+
+				if(Controller::IsKeyDown(Key::DPadRight))
+				{
+					coord[0] += speed;
+					goto patch;
+				}
+
+				if(Controller::IsKeyDown(Key::DPadDown))
+				{
+					coord[2] += speed;
+					goto patch;
+				}
+
+				if(Controller::IsKeyDown(Key::DPadLeft))
+				{
+					coord[0] -= speed;
+					goto patch;
+				}
+
+				if(Controller::IsKeyDown(Key::L))
+				{
+					coord[1] -= speed;
+					goto patch;
+				}
+
+				if(Controller::IsKeyDown(Key::R))
+				{
+					coord[1] += speed;
+					goto patch;
+				}
+			}
+
+			//Stop/follow camera from moving
+            if(entry->Hotkeys[2].IsPressed()) //R+X
+			{
+				switch(CameraPatch)
+				{
+					case 0: goto patch;
+					case 1: goto unpatch;
+				}
+			}
+			
+			//lock/unlock player
+            if(entry->Hotkeys[3].IsPressed()) //R+Y
+			{
+				switch(isOn)
+				{
+					case 0: 
+						OSD::Notify("Player:" << Color::Red << "Locked"); 
+						Animation::ExecuteAnimationWrapper(Player::GetActualPlayerIndex(), 0xF, 0, 0, 0, 0, 0, false, 0);
+						isOn = true;
+					break;
+					case 1: 
+						OSD::Notify("Player:" << Color::Green << "Unlocked");
+						Animation::ExecuteAnimationWrapper(Player::GetActualPlayerIndex(), 6, 0, 0, 0, 0, 0, false, 0);
+						isOn = false;
+					break;
+				}
+			}
+            return;
+
+        	patch:
+            if(!CameraPatch)
+			{
+            	//disable camera following
+				OSD::Notify("Camera following:" << Color::Red << "OFF");
+                Process::Patch(USA_ASM_Camera, 0xEA000020);
+                CameraPatch = true;
+            }
+            return;
+
+        	unpatch:
+            if(CameraPatch)
+			{
+				//reenable camera following
+				OSD::Notify("Camera following:" << Color::Green << "ON");
+                Process::Patch(USA_ASM_Camera, 0x2A000020);
+                CameraPatch = false;
+            }
+        }
     }
+
+	void	SetCameraModSpeed(MenuEntry *entry)
+	{
+		SetUpKB("Set speed for Camera Mod:" << Color::Magenta << "\nDefault: 1.0", false, 4, CamSpeed, CamSpeed);
+	}
 
 	void	DisableScreenshots(MenuEntry *entry)
     {
         if(entry->WasJustActivated())
-            Process::Write32(0x5B41A8, 0xE3A00001);
+            Process::Patch(0x5B41A8, 0xE3A00001);
 
         if(!entry->IsActivated())
-            Process::Write32(0x5B41A8, 0xE3500000);
+            Process::Patch(0x5B41A8, 0xE3500000);
     }
 
 	void	ChangeFOV(MenuEntry *entry)
 	{
-		static float OnOff = 1.0;
+		static float OnOff = 1.0f;
 		if(entry->IsActivated())
 		{
 			if(Player::IsInRoom(1) || Fov)
-				OnOff = 1.0;
+				OnOff = 1.0f;
 			else 
 				OnOff = FloatFov;
 			
 			Process::WriteFloat(0x47E48C, OnOff); //0x47D4D4 EUR
 		}
 		if(!entry->IsActivated()) 
-			Process::WriteFloat(0x47E48C, 1.0);
+			Process::WriteFloat(0x47E48C, 1.0f);
 	}
 
 	void	SetFOV(MenuEntry *entry)
@@ -2764,16 +3104,16 @@ namespace CTRPluginFramework
 		float SetFloatFov;
 		SetUpKB("Entre une ID:" << Color::Lime << "\nFloat: 0.70~1.00", false, 4, SetFloatFov, FloatFov);
 
-		if(IDList::ValidIDFloat(SetFloatFov, 0.69, 1.0))
+		if(IDList::ValidIDFloat(SetFloatFov, 0.69f, 1.0f))
 			FloatFov = SetFloatFov;
 	}
 
 	void	GameSpeed(MenuEntry *entry)
     {
     	if(entry->IsActivated())
-			Process::Write32(0x54DDB4, Player::InLoadingState() ? 0xE59400A0 : 0xE3E004FF); //0x54CDFC EUR
+			Process::Patch(0x54DDB4, Player::InLoadingState() ? 0xE59400A0 : 0xE3E004FF); //0x54CDFC EUR
 		else if(!entry->IsActivated()) 
-			Process::Write32(0x54DDB4, 0xE59400A0);
+			Process::Patch(0x54DDB4, 0xE59400A0);
     }
 
 	void	FastTalkNPC(MenuEntry *entry)
@@ -2794,25 +3134,25 @@ namespace CTRPluginFramework
 	{
 		if(entry->WasJustActivated())
 		{
-			Process::Write32(0x296A64, 0xE3A00001);
-			Process::Write32(0x296A8C, 0xE3A00001);
-			Process::Write32(0x296AB4, 0xE3A00004);
-			Process::Write32(0x296AC4, 0xE3A01001);
-			Process::Write32(0x296ACC, 0xFF);
-			Process::Write32(0x59ABEC, 0xE3A08005);
-			Process::Write32(0x59AD3C, 0xE28F2074);
-			Process::Write32(0x62FC30, 0xE3A00000);
+			Process::Patch(0x296A64, 0xE3A00001);
+			Process::Patch(0x296A8C, 0xE3A00001);
+			Process::Patch(0x296AB4, 0xE3A00004);
+			Process::Patch(0x296AC4, 0xE3A01001);
+			Process::Patch(0x296ACC, 0xFF);
+			Process::Patch(0x59ABEC, 0xE3A08005);
+			Process::Patch(0x59AD3C, 0xE28F2074);
+			Process::Patch(0x62FC30, 0xE3A00000);
 		}
 		else if(!entry->IsActivated())
 		{
-			Process::Write32(0x296A64, 0xE596000);
-			Process::Write32(0x296A8C, 0xEB0E686A);
-			Process::Write32(0x296AB4, 0xE5DD0004);
-			Process::Write32(0x296AC4, 0xE2401007);
-			Process::Write32(0x296ACC, 0x93A0003C);
-			Process::Write32(0x59ABEC, 0xE1A08000);
-			Process::Write32(0x59AD3C, 0xE28F206C);
-			Process::Write32(0x62FC30, 0xE1A00004);
+			Process::Patch(0x296A64, 0xE596000);
+			Process::Patch(0x296A8C, 0xEB0E686A);
+			Process::Patch(0x296AB4, 0xE5DD0004);
+			Process::Patch(0x296AC4, 0xE2401007);
+			Process::Patch(0x296ACC, 0x93A0003C);
+			Process::Patch(0x59ABEC, 0xE1A08000);
+			Process::Patch(0x59AD3C, 0xE28F206C);
+			Process::Patch(0x62FC30, 0xE1A00004);
 		}
 	}
 
@@ -2903,11 +3243,17 @@ namespace CTRPluginFramework
 		if(!SetUpKBNo("", false, numbersmax[uchoice], input))
             return;
 
-		Process::Write64(Player::GetPlayerSave() + offsets[uchoice], Game::EncryptACNLMoney(input));
+		Process::Write64(Player::GetSaveOffset() + offsets[uchoice], Game::EncryptACNLMoney(input));
     }
 
     void    PlayerOptionsMod(MenuEntry *entry)
 	{
+		if(Game::GetOnlinePlayerCount() != 0)
+		{
+			MessageBox(Color::Red << "Error", Color::White << "You need to be in solo.").SetClear(ClearScreen::Top)();
+			return;
+		}
+
 		if(Player::InLoadingState())
 		{
 			MessageBox(Color::Red << "Error", Color::White << "Your player need to be loaded.").SetClear(ClearScreen::Top)();
@@ -2922,67 +3268,91 @@ namespace CTRPluginFramework
 			"\nHex: 0~4",
 		};
 
+		ACNL_Player *PlayerSave = Player::GetSaveData();
+
+		redo:
 		u8 input;
-
 		s8 uchoice = OpenList("Choose an option:" << Color::Red << "\nOFFLINE", PlayerOpt);
-        switch(uchoice)
-        {
-            case 0:
-			case 1:
-			case 2:
-            case 3:
-            {
-                if(!SetUpKBNo("Type an ID:" << Color::Lime << HexList[uchoice], true, 2, input))
-                    return;
-                
-                Process::Write8(Player::GetPlayerSave() + 4 + uchoice, input);
+		if(uchoice < 0)
+			return;
 
-                Game::AskReloadRoom();
-                break;
-            }
-            case 4:
-            {
-                if(!SetUpKBNo("Type an ID:" << Color::Lime << "\nHex: 0~F", true, 1, input))
-                    return;
-                
-                Process::Write8(USA_Tan_Address, input);
+		if(uchoice < 4)
+		{
+			if(!SetUpKBNo("Type an ID:" << Color::Lime << HexList[uchoice], true, 2, input))
+				goto redo;
 
-                Game::AskReloadRoom();
-                break;
-            }
-            case 5:
-            {
-                s8 Genderchoice = OpenList("", GenderOpt);
-        	    if(Genderchoice < 0)
-            	    return;
+			switch(uchoice)
+			{
+				case 0:
+				{
+					if(input <= 0x21)
+						PlayerSave->PlayerFeatures.HairStyle = input;
+					break;
+				}
+				case 1:
+				{
+					if(input <= 0xF)
+						PlayerSave->PlayerFeatures.HairColor = input;
+					break;
+				}
+				case 2:
+				{
+					if(input <= 0xB)
+					{
+						PlayerSave->PlayerFeatures.Face = input;
+						Game::AskReloadRoom();
+					}
+					break;
+				}
+				case 3: 
+				{
+					if(input <= 4)
+						PlayerSave->PlayerFeatures.EyeColor = input;
+					break;
+				}
+			}
+			Player::UpdateStyle();
+		}
+		else if(uchoice == 4)
+		{
+			if(!SetUpKBNo("Type an ID:" << Color::Lime << "\nHex: 0~F", true, 1, input) || (input > 0xF))
+				goto redo;
+			else if(input > 0xF)
+				return;
+			
+			PlayerSave->PlayerFeatures.Tan = input;
+			Player::UpdateTan();
+		}
+		else if(uchoice == 5)
+		{
+			s8 Genderchoice = OpenList("", GenderOpt);
+			if(Genderchoice < 0)
+				goto redo;
+			
+			Process::Write8(USA_Gender_Address, Genderchoice);
+			Player::UpdateGender(Genderchoice);
                 
-                Process::Write8(USA_Gender_Address, Genderchoice);
-                
-                Game::AskReloadRoom();
-                break;
-            }
-            case 6:
-            {
-                s8 RegionChoice = OpenList("Country or Region?", RegionOpt);
-                if(RegionChoice == 0)
-                {
-                    if(!SetUpKBNo("Country ID:" << Color::Lime << "\nDec: 1~52", false, 2, input))
-                        return;
-                    
-                    Process::Write8(Player::GetPlayerSave() + 0x55D2, input);
-                }
-                else if(RegionChoice == 1)
-                {
-                    if(!SetUpKBNo("Region ID:" << Color::Lime << "\n(Depends on the country)", false, 2, input))
-                        return;
-                    
-                    Process::Write8(Player::GetPlayerSave() + 0x55D3, input);
-                }
-                break;
-            }
-            default:
-                break;
-        }
+            Game::AskReloadRoom();
+		}
+		else if(uchoice == 6)
+		{
+			s8 RegionChoice = OpenList("Country or Region?", RegionOpt);
+			if(RegionChoice == 0)
+			{
+				if(!SetUpKBNo("Country ID:" << Color::Lime << "\nDec: 1~52", false, 2, input) || (input > 52))
+					return;
+				
+				Process::Write8(Player::GetSaveOffset() + 0x55D2, input);
+			}
+			else if(RegionChoice == 1)
+			{
+				if(!SetUpKBNo("Region ID:" << Color::Lime << "\n(Depends on the country)", false, 2, input))
+					return;
+				
+				Process::Write8(Player::GetSaveOffset() + 0x55D3, input);
+			}
+		}
+		goto redo;
     }
 
 	void    PlayerControllerTeleporter(MenuEntry *entry)
@@ -3024,15 +3394,17 @@ namespace CTRPluginFramework
 			}
 		}
 
+		if(ControlPlayer) //reset bool
+			ControlPlayer = false;
+
 		if((entry->Hotkeys[0].IsPressed()))
         {
 			if(*(u32 *)0x75F010 == 0xE1500000)
 			{
 				ControlPlayer = true;
-				Process::Write32(0x75F010, 0xE3520000);
+				Process::Patch(0x75F010, 0xE3520000);
                 Process::Write8(0x75F020, 0);
                 OSD::Notify("Control player:" << Color::Red << "OFF");
-				ControlPlayer = false;
 			}
             SelectedPlayerIndex = (SelectedPlayerIndex + 1) % 4;
             OSD::Notify("Selected player:" << sPlayerColor << Utils::Format("%01X", SelectedPlayerIndex));
@@ -3046,17 +3418,16 @@ namespace CTRPluginFramework
 				if(SelectedPlayerIndex == Player::GetActualPlayerIndex()) // Cannot control ourself x)
 					return;
 
-                Process::Write32(0x75F010, 0xE1500000);
+                Process::Patch(0x75F010, 0xE1500000);
                 Process::Write8(0x75F020, SelectedPlayerIndex);
                 OSD::Notify("Control player " << PlayerColor << Utils::Format("%01X", SelectedPlayerIndex) << Color::White << ":" << Color::Green << "ON");
             }
             else
             {
-                Process::Write32(0x75F010, 0xE3520000);
+                Process::Patch(0x75F010, 0xE3520000);
                 Process::Write8(0x75F020, 0);
                 OSD::Notify("Control player:" << Color::Red << "OFF");
             }
-			ControlPlayer = false;
         }
 
 		if(entry->Hotkeys[2].IsPressed() && SelectedPlayerIndex != Player::GetActualPlayerIndex())
@@ -3203,20 +3574,40 @@ namespace CTRPluginFramework
 			{
 				case 0: // Save actual player outfit into a file
 				{
+					s8 PlayerChoice;
+					if(Game::GetOnlinePlayerCount() != 0)
+					{
+						PlayerChoice = OpenList("Select a player to save their outfit to." << Color::Yellow << "\n\nOutfits Saver", Game::GetOnlinePlayerList());
+						if(PlayerChoice < 0)
+							return;
+						else if(!Player::IsLoaded(PlayerChoice))
+						{
+							OSD::Notify(Color::Yellow << "You must be in the same room as your target!");
+							return;
+						}
+					}
+					u32 BaseAddress = (Game::GetOnlinePlayerCount() != 0) ? (Player::GetOffset(PlayerChoice) + 0x3B4) : (Player::GetOffset() + 0x3B4);
+
+					if(*(u16 *)BaseAddress == 0x2000)
+					{
+						OSD::Notify(Color::Orange << "You cannot save a Mii!");
+						return;
+					}
+
 					std::string OutfitName;
 					if(SetUpKB("Name your outfit." << Color::Yellow << "\n\nOutfits Saver", false, 20, OutfitName, "", 0))
 					{
 						Outfit ReadedOutfit;
 						u16 ActualPlayerOutfit[6];
+
 						for(u8 i = 0; i < 7; i++)
 						{
-							if(i != 3) // jump, there is nothing here (maybe girl outfit?)
-							{
-								if(i > 3)
-									Process::Read16((USA_Outfit_Address + (i * 4)), ActualPlayerOutfit[(i - 1)]); // Read actual each piece of player outfit
-								else
-									Process::Read16((USA_Outfit_Address + (i * 4)), ActualPlayerOutfit[i]); // Read actual each piece of player outfit
-							}
+							if(i == 3) // jump, there is nothing here (maybe girl outfit?)
+								continue;
+							
+							u8 OutfitPiece = (i > 3) ? (i - 1) : i;
+
+							Process::Read16(BaseAddress + (i * 4), ActualPlayerOutfit[OutfitPiece]);
 						}
 
 						File OutfitSave;
@@ -3355,11 +3746,12 @@ namespace CTRPluginFramework
 	void	PlayerNameChanger(MenuEntry* entry)
     {
 		const u16 offset = 0x55A8;
+		u32 PSaveOffset = Player::GetSaveOffset();
 		std::string input;
 		
         Keyboard Name("Entrez le nom que vous souhaitez avoir:" << Color::Yellow << "\n\nPlayer Name changer");
         Name.SetMaxLength(8);
-        if(Player::GetPlayerSave() == 0)
+        if(PSaveOffset == 0)
 			return;
         
 		if(Name.Open(input) != -1 && input.size() != 8)
@@ -3373,35 +3765,35 @@ namespace CTRPluginFramework
 				return;
 			
             //Wipe Name String entirely first
-            Process::Write32((Player::GetPlayerSave() + offset), 0);
-            Process::Write32((Player::GetPlayerSave() + offset + 0x4), 0);
-            Process::Write32((Player::GetPlayerSave() + offset + 0x8), 0);
-            Process::Write32((Player::GetPlayerSave() + offset + 0xC), 0);
+            Process::Write32((PSaveOffset + offset), 0);
+            Process::Write32((PSaveOffset + offset + 0x4), 0);
+            Process::Write32((PSaveOffset + offset + 0x8), 0);
+            Process::Write32((PSaveOffset + offset + 0xC), 0);
 
 			switch(uchoice)
 			{
 				case 0: // Normal
-					Process::WriteString((Player::GetPlayerSave() + offset), input, StringFormat::Utf16);
+					Process::WriteString((PSaveOffset + offset), input, StringFormat::Utf16);
 					break;
 				case 1: // Align Left   0x0009 = big Seperator
-					Process::WriteString((Player::GetPlayerSave() + offset), input, StringFormat::Utf16);
-                    Process::Write16((Player::GetPlayerSave() + offset + (input.size() * 0x2)), 0x9);
+					Process::WriteString((PSaveOffset + offset), input, StringFormat::Utf16);
+                    Process::Write16((PSaveOffset + offset + (input.size() * 0x2)), 0x9);
 					break;
 				case 2: // Align Right   0x0009 = big Seperator
-					Process::Write16((Player::GetPlayerSave() + offset), 0x9);
-                    Process::WriteString((Player::GetPlayerSave() + offset + 0x2), input, StringFormat::Utf16);
+					Process::Write16((PSaveOffset + offset), 0x9);
+                    Process::WriteString((PSaveOffset + offset + 0x2), input, StringFormat::Utf16);
 					break;
 				case 3: // Higher   0x000A = next Line
-					Process::WriteString((Player::GetPlayerSave() + offset), input, StringFormat::Utf16);
-                    Process::Write16((Player::GetPlayerSave() + offset + (input.size() * 0x2)), 0xA);
+					Process::WriteString((PSaveOffset + offset), input, StringFormat::Utf16);
+                    Process::Write16((PSaveOffset + offset + (input.size() * 0x2)), 0xA);
 					break;
 				case 4: // Lower   0x000A = next Line
-					Process::Write16((Player::GetPlayerSave() + offset), 0xA);
-                    Process::WriteString((Player::GetPlayerSave() + offset + 0x2), input, StringFormat::Utf16);
+					Process::Write16((PSaveOffset + offset), 0xA);
+                    Process::WriteString((PSaveOffset + offset + 0x2), input, StringFormat::Utf16);
 					break;
 				case 5: // Empty   0x000E <= makes string Invalid
-					Process::Write16((Player::GetPlayerSave() + offset), 0xE);
-                    Process::WriteString((Player::GetPlayerSave() + offset + 0x2), input, StringFormat::Utf16);
+					Process::Write16((PSaveOffset + offset), 0xE);
+                    Process::WriteString((PSaveOffset + offset + 0x2), input, StringFormat::Utf16);
 					break;
 				default:
 					break;
@@ -3410,11 +3802,11 @@ namespace CTRPluginFramework
         else if (input.size() == 8) 
 		{
             //Wipe Name String entirely first
-            Process::Write32((Player::GetPlayerSave() + offset), 0);
-            Process::Write32((Player::GetPlayerSave() + offset + 0x4), 0);
-            Process::Write32((Player::GetPlayerSave() + offset + 0x8), 0);
-            Process::Write32((Player::GetPlayerSave() + offset + 0xC), 0);
-            Process::WriteString((Player::GetPlayerSave() + offset), input, StringFormat::Utf16);
+            Process::Write32((PSaveOffset + offset), 0);
+            Process::Write32((PSaveOffset + offset + 0x4), 0);
+            Process::Write32((PSaveOffset + offset + 0x8), 0);
+            Process::Write32((PSaveOffset + offset + 0xC), 0);
+            Process::WriteString((PSaveOffset + offset), input, StringFormat::Utf16);
         }
     }
 
@@ -3427,7 +3819,7 @@ namespace CTRPluginFramework
         if(TownName.Open(input) < 0)
 			return;
 
-        Process::WriteString(Player::GetPlayerSave() + 0x55BE, input, StringFormat::Utf16);
+        Process::WriteString(Player::GetSaveOffset() + 0x55BE, input, StringFormat::Utf16);
         Process::WriteString(0x31F8913A, input, StringFormat::Utf16);
     }
 
@@ -3492,73 +3884,94 @@ namespace CTRPluginFramework
 			MessageBox(Color::Red << "Error", Color::White << "Unable to open the file.").SetClear(ClearScreen::Top)();
     }
 
-	void	DumpSave(MenuEntry* entry)
-    {
-        File Garden; //File Object
-		Directory Luna("Luna", true); //create the directory if it doesn't exist
-        Directory dir("Luna/Towns", true); //Create the directory if it doesn't exist
- 
-        Keyboard keyboard("Name the town you want to dump." << Color::Yellow << "\n\nGarden Dumper");
- 
-        std::string savename;  //name for the save
- 
-        if(keyboard.Open(savename) < 0)
-			return;
-
-        if(savename.find(".dat") == std::string::npos) //if the entered name haven't got .dat at the end
-            savename += ".dat";                         //add .dat
-        if(dir.OpenFile(Garden, savename, File::RWC) == 0)
-        {
-            if((Garden.Dump(0x31F26F80, 0x89B00)) == 0)
-                MessageBox("Created file at:\n" << Color::Yellow << "Luna/Towns/" + savename).SetClear(ClearScreen::Top)();
-            else //if Failed
-                MessageBox(Color::Red << "Error", Color::White << "Unable to create backup file.").SetClear(ClearScreen::Top)();
-        }//if Failed
-        else MessageBox(Color::Red << "Error", Color::White << "Unable to create/open file.").SetClear(ClearScreen::Top)();
-    }
- 
-    void	RestoreSave(MenuEntry* entry)
-    {
-        StringVector GardenList; //Vector for our Save Names
-        File Garden; //File Object
-
+	void	SavesManager(MenuEntry* entry)
+	{
+		File Garden; //File Object
+		StringVector GardenList; //Vector for our Save Names
 		Directory Luna("Luna", true); //create the directory if it doesn't exist
 		Directory dir("Luna/Towns", true); //Create the directory if it doesn't exist
-		Directory::Open(dir, "Luna/Towns");
-        dir.ListFiles(GardenList, ".dat");
 
-        if(GardenList.empty())
-        {
-            MessageBox(Color::Yellow << "No backup is available!").SetClear(ClearScreen::Top)();
-            dir.Close();
-            return;
-        }
- 
-        Keyboard RestoreSave("Select the backup to restore." << Color::Yellow << "\n\nGarden Restore");
-        RestoreSave.Populate(GardenList);
-		s8 uchoice = RestoreSave.Open();
- 
-        if(uchoice < 0)
-			return;
-
-        if(dir.OpenFile(Garden, GardenList[uchoice], File::RW) == 0)
-        {
-            if((Garden.Inject(0x31F26F80, 0x89B00)) == 0)
+		redo:
+		s8 uchoice = OpenList("", {"Dump Save", "Restore Save"});
+		switch(uchoice)
+		{
+			case 0:
 			{
-                MessageBox(Color::Green << "You have restored your backup!").SetClear(ClearScreen::Top)();
-				
-				Game::AskReloadRoom();
+				Keyboard DumpSave("Name the town you want to dump." << Color::Yellow << "\n\nGarden Dumper");
+		
+				std::string savename;  //name for the save
+		
+				if(DumpSave.Open(savename) < 0)
+					goto redo;
+
+				if(savename.find(".dat") == std::string::npos) //if the entered name haven't got .dat at the end
+					savename += ".dat";                         //add .dat
+				if(dir.OpenFile(Garden, savename, File::RWC) == 0)
+				{
+					if((Garden.Dump(0x31F26F80, 0x89B00)) == 0)
+						MessageBox("Created file at:\n" << Color::Yellow << "Luna/Towns/" + savename).SetClear(ClearScreen::Top)();
+					else //if Failed
+					{
+						MessageBox(Color::Red << "Error", Color::White << "Unable to create backup file.").SetClear(ClearScreen::Top)();
+						goto redo;
+					}
+				}
+				else //if Failed
+				{
+					MessageBox(Color::Red << "Error", Color::White << "Unable to create/open file.").SetClear(ClearScreen::Top)();
+					goto redo;
+				}
+				break;
 			}
-            else //if failed
-				MessageBox(Color::Red << "Error", Color::White << "Unable to inject the backup file.").SetClear(ClearScreen::Top)();
-        }// if Failed
-        else MessageBox(Color::Red << "Error", Color::White << "Unable to open the file.").SetClear(ClearScreen::Top)();
-    }
+			case 1:
+			{
+				Directory::Open(dir, "Luna/Towns");
+				dir.ListFiles(GardenList, ".dat");
+
+				if(GardenList.empty())
+				{
+					MessageBox(Color::Yellow << "No backup is available!").SetClear(ClearScreen::Top)();
+					dir.Close();
+					goto redo;
+				}
+		
+				Keyboard RestoreSave("Select the backup to restore." << Color::Yellow << "\n\nGarden Restore");
+				RestoreSave.Populate(GardenList);
+				s8 uchoice = RestoreSave.Open();
+		
+				if(uchoice < 0)
+					goto redo;
+
+				if(dir.OpenFile(Garden, GardenList[uchoice], File::RW) == 0)
+				{
+					if((Garden.Inject(0x31F26F80, 0x89B00)) == 0)
+					{
+						MessageBox(Color::Green << "You have restored your backup!").SetClear(ClearScreen::Top)();
+						
+						Game::AskReloadRoom();
+					}
+					else //if failed
+					{
+						MessageBox(Color::Red << "Error", Color::White << "Unable to inject the backup file.").SetClear(ClearScreen::Top)();
+						goto redo;
+					}
+				}
+				else //if Failed
+				{
+					MessageBox(Color::Red << "Error", Color::White << "Unable to open the file.").SetClear(ClearScreen::Top)();
+					goto redo;
+				}
+				break;
+			}
+			default:
+				break;
+		}
+	}
 
 	void    Badges(MenuEntry *entry)
     {
 		s8 uchoice = OpenList("", BadgesOpt);
-		if(uchoice == -1 || (*(u8 *)USA_Player_Address > 0x3))
+		if(uchoice < 0 || (*(u8 *)USA_Player_Address > 0x3))
 			return;
 		
 		for(u8 i = 0; i < 24; i++)
@@ -3579,7 +3992,7 @@ namespace CTRPluginFramework
 					0xCC, 0xFC, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 
 					0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xD0, 0x9A
 				};
-				Process::CopyMemory(reinterpret_cast<void *>(Player::GetPlayerSave() + 0x6C70), encyclopediabuffer, sizeof(encyclopediabuffer));
+				Process::CopyMemory(reinterpret_cast<void *>(Player::GetSaveOffset() + 0x6C70), encyclopediabuffer, sizeof(encyclopediabuffer));
 				break;
 			}
 			case 1: //Emoticons
@@ -3589,15 +4002,15 @@ namespace CTRPluginFramework
 					0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 
 					0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x20, 0x21, 0x24, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2E
 				};
-				Process::CopyMemory(reinterpret_cast<void *>(Player::GetPlayerSave() + 0x89D0), emoticonbuffer, sizeof(emoticonbuffer));
+				Process::CopyMemory(reinterpret_cast<void *>(Player::GetSaveOffset() + 0x89D0), emoticonbuffer, sizeof(emoticonbuffer));
 				break;
 			}
 			case 2: //Song
 				for(u8 i = 0; i < 3; i++)
-					Process::Write32(Player::GetPlayerSave() + 0x8F9C + (i * 4), 0xFFFFFFFF);
+					Process::Write32(Player::GetSaveOffset() + 0x8F9C + (i * 4), 0xFFFFFFFF);
 				break;
 			case 3: //Catalog
-				std::memset((void *)(Player::GetPlayerSave() + 0x6C90), 0xFF, 106 * 4);
+				std::memset((void *)(Player::GetSaveOffset() + 0x6C90), 0xFF, 106 * 4);
 				break;
 			default: 
 				break;
@@ -3606,22 +4019,27 @@ namespace CTRPluginFramework
 
 	void 	DreamCodeModifier(MenuEntry *entry)
     {
-		u8 Part1, Part2;
-        u32 Part3;
-
-		if(!SetUpKBNo("Dial the dream code numbers\nyou would like to have." << Color::Lime << "\n 2 Numbers", true, 2, Part1))
+		u16 Part1, Part2, Part3;
+		ACNL_Player *PlayerSave = Player::GetSaveData();
+		if(!PlayerSave)
 			return;
 
-		if(!SetUpKBNo("Dial the dream code numbers\nyou would like to have." << Color::Lime << "\n 2 Numbers", true, 2, Part2))
+		AskPart1:
+		if(!SetUpKBNo("Dial the dream code numbers\nyou would like to have." << Color::Lime << "\n 4 Numbers | Part 1", true, 4, Part1))
 			return;
+		
+		AskPart2:
+		if(!SetUpKBNo("Dial the dream code numbers\nyou would like to have." << Color::Lime << "\n 4 Numbers | Part 2", true, 4, Part2))
+			goto AskPart1;
 
-		if(!SetUpKBNo("Dial the dream code numbers\nyou would like to have." << Color::Lime << "\n 8 Numbers", true, 8, Part3))
-			return;
+		if(!SetUpKBNo("Dial the dream code numbers\nyou would like to have." << Color::Lime << "\n 4 Numbers | Part 3", true, 4, Part3))
+			goto AskPart2;
 
-		Process::Write16(0x31F2C711, Part1);
-		Process::Write16(0x31F2C714, Part2);
-		Process::Write16(0x31F2C710, Part3);
-		MessageBox(Color::Green << "Success!", Color::White << "\nNew dream code:\n" << Color::Yellow << Utils::Format("%02X", Part1) + Utils::Format("%02X", Part2) + "-" + Utils::Format("%04X", (Part3 >> 16) & 0xFFFF) + "-" + Utils::Format("%04X", Part3 & 0xFFFF)).SetClear(ClearScreen::Top)();
+		PlayerSave->DreamCode.DCPart1 = (Part2 << 16) + Part3;
+		PlayerSave->DreamCode.DCPart2 = (Part1 & 0xFF);
+		PlayerSave->DreamCode.DCPart3 = (Part1 >> 8);
+		PlayerSave->DreamCode.HasDreamAddress = true;
+		MessageBox(Color::Green << "Success!", Color::White << "\nNew dream code:" << Color::Yellow << Utils::Format("\n%04X-%04X-%04X", Part1, Part2, Part3)).SetClear(ClearScreen::Top)();
     }
 
 	/*
@@ -3632,18 +4050,12 @@ namespace CTRPluginFramework
 	{
 		if(entry->WasJustActivated())
 		{
-			Process::Write32(USA_SaveMenu_Address, 0xE1A00000);
-			Process::Write32(0x1A0968, 0xE1A00000);
-     		Process::Write32(0x1A096C, 0xE3A00000);
-        	Process::Write32(0x1A0970, 0xEB0E069C);
+			Process::Patch(USA_SaveMenu_Address, 0xE1A00000);
 			Save = false;
 		}
 		else if(!entry->IsActivated())
 		{
-			Process::Write32(USA_SaveMenu_Address, 0xE8900006);
-			Process::Write32(0x1A0968, 0xE3A01040);
-			Process::Write32(0x1A096C, 0xE5900000);
-			Process::Write32(0x1A0970, 0xEB14D0AB);
+			Process::Patch(USA_SaveMenu_Address, 0xE8900006);
 			Save = true;
 		}
 	}
@@ -3651,9 +4063,9 @@ namespace CTRPluginFramework
 	void	FastMenus(MenuEntry *entry)
 	{
 		if(entry->WasJustActivated())
-			Process::Write32(0x56A2C0, 0x7F7FFFFF);
+			Process::Patch(0x56A2C0, 0x7F7FFFFF);
 		else if(!entry->IsActivated())
-			Process::Write32(0x56A2C0, 0x3F800000);
+			Process::Patch(0x56A2C0, 0x3F800000);
 	}
 
 	void	CensusMenu(MenuEntry *entry)
@@ -3670,12 +4082,13 @@ namespace CTRPluginFramework
 			return;
 
 		u32 x, y;
-		if(Player::GetWorldCoords(&x, &y) && !Player::InLoadingState() && !IsCatalogOpen)
+		if(Player::GetWorldCoords(&x, &y) && !Player::InLoadingState() && !IsCatalogOpen && !WantReload && !TimeMachineBool)
 		{
 			Process::Write32(0x6D3CB4, 0xE3A0002E);
 			Process::Write32(0x6578B0, 0xE3A0101A);
 			Animation::ExecuteAnimationWrapper(Player::GetActualPlayerIndex(), 0x3F, 0, 1, 1, 1, 0, x, y, true);
 			MessageBox(Color::Green << "Success!", Color::White << " Note:" << Color::Yellow << "\nPlease close the plugin menu \nif you want to change the time.").SetClear(ClearScreen::Top)();
+			TimeMachineBool = true;
 		}
 	}
 
@@ -3703,20 +4116,26 @@ namespace CTRPluginFramework
 	{
 		if(entry->WasJustActivated())
 		{
-			Process::Write32(0x5971D4, 0xE1A00000);
-			Process::Write32(0x5971DC, 0xE1A00000);
-			Process::Write32(0x5971E4, 0x1A00001B);
-			Process::Write32(0x5971EC, 0xEA000080);
-			Process::Write32(0x59945C, 0xE1A00000);
+			Process::Patch(0x5971D4, 0xE1A00000);
+			Process::Patch(0x5971DC, 0xE1A00000);
+			Process::Patch(0x5971E4, 0x1A00001B);
+			Process::Patch(0x5971EC, 0xEA000080);
+			Process::Patch(0x59945C, 0xE1A00000);
 		}
 		else if(!entry->IsActivated())
 		{
-			Process::Write32(0x5971D4, 0x0A000008);
-			Process::Write32(0x5971DC, 0x0A00005B);
-			Process::Write32(0x5971E4, 0x0A00001B);
-			Process::Write32(0x5971EC, 0x0A000080);
-			Process::Write32(0x59945C, 0xCA000005);
+			Process::Patch(0x5971D4, 0x0A000008);
+			Process::Patch(0x5971DC, 0x0A00005B);
+			Process::Patch(0x5971E4, 0x0A00001B);
+			Process::Patch(0x5971EC, 0x0A000080);
+			Process::Patch(0x59945C, 0xCA000005);
 		}
+	}
+
+	void	OnParticleChange(Keyboard &k, KeyboardEvent &e)
+	{
+		std::string& s = k.GetInput();
+		k.GetMessage() = "Type the ID of a particle:" << Color::Lime << "\nHex: 0~246" << Color::DeepSkyBlue << "\n\nParticle ID: " << IDList::GetParticleName(s != "" ? std::stoi(s, nullptr, 16) : 0);
 	}
 
 	void	ParticlesSpawner(MenuEntry *entry)
@@ -3727,9 +4146,12 @@ namespace CTRPluginFramework
 		
 		if(entry->Hotkeys[0].IsPressed())
 		{
-			SetUpKB("Type the ID of a particle:" << Color::Lime << "\nHex: 0~FFFF", true, 4, ParticleID, ParticleID);
+			u16 SetParticle;
+			SetUpKB("Type the ID of a particle:" << Color::Lime << "\nHex: 0~246", true, 3, SetParticle, ParticleID, OnParticleChange);
+			if(IDList::ParticleValid(SetParticle))
+				ParticleID = SetParticle;
 		}
-		if(Turbo ? entry->Hotkeys[1].IsDown() : entry->Hotkeys[1].IsPressed())
+		else if(Turbo ? entry->Hotkeys[1].IsDown() : entry->Hotkeys[1].IsPressed()) // if u switch Turbo mode, need to go in some menu if u dont wanna crash (idk why, its a BUG from 'Particles' function)
 		{
 			u8 x, y, z;
 			for(x = 0; x < NumParticles[0]; x++)
@@ -3788,17 +4210,17 @@ namespace CTRPluginFramework
         Process::Write8(0x998C7E, 0x10);
         if(entry->WasJustActivated())
         {
-			Process::Write32(0x5B4B60, 0xE3A00001); //allow wallpaper change
-            Process::Write32(0x5B5268, 0xE1A00000);
-            Process::Write32(0x5B5284, 0xEA000026);
-			Process::Write32(0x5B7558, 0xE3A00001); //lightswitch
+			Process::Patch(0x5B4B60, 0xE3A00001); //allow wallpaper change
+            Process::Patch(0x5B5268, 0xE1A00000);
+            Process::Patch(0x5B5284, 0xEA000026);
+			Process::Patch(0x5B7558, 0xE3A00001); //lightswitch
         }
         else if(!entry->IsActivated())
         {
-			Process::Write32(0x5B4B60, 0xE3A00000); //allow wallpaper change
-            Process::Write32(0x5B5268, 0x0A00000D);
-            Process::Write32(0x5B5284, 0x0A000026);
-			Process::Write32(0x5B7558, 0xE3A00000); //lightswitch
+			Process::Patch(0x5B4B60, 0xE3A00000); //allow wallpaper change
+            Process::Patch(0x5B5268, 0x0A00000D);
+            Process::Patch(0x5B5284, 0x0A000026);
+			Process::Patch(0x5B7558, 0xE3A00000); //lightswitch
         }
     }
 
@@ -3807,30 +4229,39 @@ namespace CTRPluginFramework
 		if(entry->IsActivated())
 		{
         	if(Player::IsInRoom(0x63, Player::GetActualPlayerIndex(), true) && !Game::IsSaving())
-				Process::Write32(0x31FF599C, 0xFEDFEDFF);
+				Process::Write32(0x31FF599C, 0xFEDFEDFF); //force error
 		}
     }
 
+	static u32 readaddress;
+	bool    AddressTestOSD(const Screen &screen)
+	{
+		u32 y;
+		if(screen.IsTop)
+		{
+			y = screen.Draw("Addr:0x" << (Utils::Format("%08X", readaddress)), 306, 0);
+			y = screen.Draw("Value:0x" << (Utils::Format("%08X", *(u32 *)readaddress)), 300, y);
+		}
+		return true;
+	}
+
 	void	AddressTest(MenuEntry *entry)
 	{
-		static u32 readaddress;
-		static u32 readvalue;
 		static u32 writeaddress;
 		u32 writevalue;
+		if(entry->IsActivated())
+		{
+			OSD::Run(AddressTestOSD);
+		}
+		else if(!entry->IsActivated())
+		{
+			OSD::Stop(AddressTestOSD);
+		}
 		if(entry->Hotkeys[0].IsPressed())
 		{
 			SetUpKB("Enter an address. Read", true, 8, readaddress, readaddress);
 		}
 		if(entry->Hotkeys[1].IsPressed())
-		{
-			Process::Read32(readaddress, readvalue);
-			OSD::Notify("Address Readed");
-		}
-		if(entry->Hotkeys[2].IsPressed())
-		{
-			OSD::Notify(Utils::Format("Addr:0x%08X", readaddress) << Utils::Format(" Value:0x%08X", readvalue));
-		}
-		if(entry->Hotkeys[3].IsPressed())
 		{
 			SetUpKB("Enter an address. Write", true, 8, writeaddress, writeaddress);
 			Process::Read32(writeaddress, writevalue);
@@ -3927,7 +4358,7 @@ namespace CTRPluginFramework
 		OSD::Notify(Utils::Format("Player %d: %s - %s - %s", PlayerIndex, str.substr(0, 4).c_str(), str.substr(4, 4).c_str(), str.substr(8, 4).c_str()));
 	}
 
-
+	/*
 	void DisplayImagePart(BMPImage& image, u32 x, u32 y, u32 width, u32 height)
 	{
 		// Crée une nouvelle image pour stocker la partie découpée
@@ -3981,8 +4412,7 @@ namespace CTRPluginFramework
 		// Afficher la région spécifiée
 		DisplayImagePart(image, x, y, width, height);
 	}
-		
-	/*
+
 	static Screen::Image texture;
 	bool isTextureLoaded = false;
 
@@ -4019,4 +4449,46 @@ namespace CTRPluginFramework
 		
 		DrawImagePart(x, y, tileSize, tileSize, 100, 50);  // Afficher la case au centre
 	}*/
+
+	void FishThrower(MenuEntry *entry)
+	{				
+		static u8 playerID = 0;
+		static bool random = false;
+		u32 FishID = 0x22E1;
+
+		vu32(*FUNC)(u32* param1, float* param2, u32 param3);
+
+		if(entry->Hotkeys[0].IsPressed())
+		{
+			if(playerID == 3) playerID = 0;		
+			else playerID++;
+
+			OSD::Notify(Utils::Format("Player %02X selected!", playerID));
+		}
+
+		if(entry->Hotkeys[1].IsPressed())
+		{
+			random = !random;
+			OSD::Notify("Random Mode: " << (random ? (Color::Green << "ON") : (Color::Red << "OFF")));
+		}
+
+		if(entry->Hotkeys[2].IsPressed())
+		{
+			if(random)
+			{
+				FishID = Utils::Random(0x22E1, 0x234A);
+				//if(Items::GetItemCategorie(FishID) != Item_Categories::Fish)
+					//return;
+			}
+
+			if(Player::IsLoaded(playerID))
+			{
+				Process::Write32((u32)&FUNC, 0x5C2DAC);
+				(void)FUNC(&FishID, Player::GetCoordinates(playerID), 1);
+			}
+		}
+
+		if(entry->Hotkeys[3].IsPressed())
+			SetUpKB("Set Fish ID:", true, 4, FishID, FishID);
+	}
 }

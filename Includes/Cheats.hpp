@@ -26,6 +26,8 @@ namespace CTRPluginFramework
     void    WalkOverThings(MenuEntry *entry);
     void	MoonJump(MenuEntry *entry);
     void    OptionMoonJump(MenuEntry *entry);
+    void	SpeedMod(MenuEntry *entry);
+    void	MenuSpeedMod(MenuEntry *entry);
     void	SpeedHack(MenuEntry *entry);
     void	MovementChanger(MenuEntry *entry);
     void	RoomMod(MenuEntry *entry);
@@ -35,14 +37,15 @@ namespace CTRPluginFramework
 	void	OptionSetSeeders(MenuEntry *entry);
     void    TouchDrop(MenuEntry *entry);
     void	OptionTouchDrop(MenuEntry *entry);
-    void    AutoDrop(MenuEntry *entry);
+    void    AutoDropRemove(MenuEntry *entry);
+    void	OptionAutoDropRemove(MenuEntry *entry);
     void    DropModifier(MenuEntry *entry);
     void    OptionDropModifier(MenuEntry *entry);
     void    PickUpMod(MenuEntry *entry);
     void    MapEditor(MenuEntry *entry);
     void	Trampler(MenuEntry *entry);
     void	CatalogToPockets(MenuEntry *entry);
-    void	DropAndDigAnywhere(MenuEntry *entry);
+    void	InfiniteDropPlant(MenuEntry *entry);
 
     /*Animations Codes*/
     void	Idle(MenuEntry *entry);
@@ -93,14 +96,16 @@ namespace CTRPluginFramework
     void    ChatSpam(MenuEntry *entry);
 
     /*Visual & Sound Codes*/
-    void    GameSpeed(MenuEntry *entry);
-    void	FastTalkNPC(MenuEntry *entry);
+    void	CameraMod(MenuEntry *entry);
+    void	SetCameraModSpeed(MenuEntry *entry);
+    void	DisableScreenshots(MenuEntry *entry);
     void	ChangeFOV(MenuEntry *entry);
     void	SetFOV(MenuEntry *entry);
+    void    GameSpeed(MenuEntry *entry);
+    void	FastTalkNPC(MenuEntry *entry);
+    void	AlwaysCherryBlossomTrees(MenuEntry *entry);
     void	TownBGMModifier(MenuEntry *entry);
     void	IslandHutBGMModifier(MenuEntry *entry);
-    void	AlwaysCherryBlossomTrees(MenuEntry *entry);
-    void	DisableScreenshots(MenuEntry *entry);
     // Camera Mod
 
     /*Player Codes*/
@@ -117,8 +122,7 @@ namespace CTRPluginFramework
     void	TownNameChanger(MenuEntry *entry);
     void	TPCPictureExport(MenuEntry *entry);
     void	TPCPictureImport(MenuEntry *entry);
-    void	DumpSave(MenuEntry* entry);
-    void	RestoreSave(MenuEntry* entry);
+    void	SavesManager(MenuEntry* entry);
     void    Badges(MenuEntry *entry);
     void	FillCollectablesList(MenuEntry *entry);
     void 	DreamCodeModifier(MenuEntry *entry);
@@ -140,11 +144,14 @@ namespace CTRPluginFramework
     void	AddressTest(MenuEntry *entry);
     void	GameFuncCall(MenuEntry *entry);
     void	GetFriendCodeMenu(MenuEntry *entry);
-    void	DisplayRegion(MenuEntry *entry);
+    void    FishThrower(MenuEntry *entry);
 
     /*Helpers*/
+    void    OnNewFrameCallback(Time ActualTime);
+    void	InitKeepConnection(void);
     void	PlayerUpdateCallback(void);
     void	ToggleTouchscreenForceOn(void);
     bool	IsFolderUsable(MenuFolder *folder, bool OnOff);
+    void	ResetBools(void);
 }
 #endif

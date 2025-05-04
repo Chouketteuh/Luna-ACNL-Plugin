@@ -24,86 +24,96 @@ namespace CTRPluginFramework
 				Process::Write8(0x20529D58, 1);
 
 			// Online Drop Lag Remover
-				Process::Write32(0x5A1454, 0xE1A00000); //create locked spot pkt send 	//0x5A049C EUR
-				Process::Write32(0x5A12F4, 0xE1A00000); //clear locked spot pkt send	//0x5A033C EUR
-				Process::Write32(0x59FF5C, 0xEA000010); //pkt is from host				//0x59EFA4 EUR
-				Process::Write32(0x59FD98, 0xEA000003); //bypass check in 0x59FC7C		//0x59EDE0 EUR
-				Process::Write32(0x5983F4, 0xE1A00000); //unnecessary?					//0x59743C EUR
-				Process::Write32(0x5984DC, 0xE1A00000); //unnecessary?					//0x597524 EUR
-				Process::Write32(0x59F8A0, 0xE1A00000); 								//0x59E8E8 EUR
-				Process::Write32(0x5A09B0, 0xEA000022); //item tree drop				//0x59F9F8 EUR
-				Process::Write32(0x5A0DF4, 0xEA00002D); //fruit tree drop				//0x59FE3C EUR
+				Process::Patch(0x5A1454, 0xE1A00000); //create locked spot pkt send 	//0x5A049C EUR
+				Process::Patch(0x5A12F4, 0xE1A00000); //clear locked spot pkt send		//0x5A033C EUR
+				Process::Patch(0x59FF5C, 0xEA000010); //pkt is from host				//0x59EFA4 EUR
+				Process::Patch(0x59FD98, 0xEA000003); //bypass check in 0x59FC7C		//0x59EDE0 EUR
+				Process::Patch(0x5983F4, 0xE1A00000); //unnecessary?					//0x59743C EUR
+				Process::Patch(0x5984DC, 0xE1A00000); //unnecessary?					//0x597524 EUR
+				Process::Patch(0x59F8A0, 0xE1A00000); 									//0x59E8E8 EUR
+				Process::Patch(0x5A09B0, 0xEA000022); //item tree drop					//0x59F9F8 EUR
+				Process::Patch(0x5A0DF4, 0xEA00002D); //fruit tree drop					//0x59FE3C EUR
 
 			// Drop Related Stuff
-				Process::Write32(0x59FCA4, 0xEA000004); //0x59ECEC EUR
+				Process::Patch(0x59FCA4, 0xEA000004); //0x59ECEC EUR
 				for(u8 i = 0; i <= 0x21; i++)
-					Process::Write32(0x5A0F54 + (i * 4), USA_ASM_DropReplaceSwitch);	//0x59FF9C EUR
+					Process::Patch(0x5A0F54 + (i * 4), USA_ASM_DropReplaceSwitch);	//0x59FF9C EUR
 
 			// Drop Items Everywhere
-				//Process::Write32(0x1655EC, 0xE3A00001);								//0x16560C EUR
-				//Process::Write32(0x1655F8, 0xEA000006);								//0x165618 EUR
-				//Process::Write32(0x1654EC, 0xEA000005);								//0x16550C EUR
-				//Process::Write32(0x165580, 0xEA000010); //on other players			//0x1655A0 EUR
+				Process::Patch(0x1655EC, 0xE3A00001);								//0x16560C EUR
+				Process::Patch(0x1655F8, 0xEA000006);								//0x165618 EUR
+				Process::Patch(0x1654EC, 0xEA000005);								//0x16550C EUR
+				Process::Patch(0x165580, 0xEA000010); //on other players			//0x1655A0 EUR
 		
 			// Idle After Tree Shake/Cut
-				// Process::Write32(0x660600, 0xE3A01006);	//0x65F638 EUR
-				// Process::Write32(0x662328, 0xE3A01006);	//0x661360 EUR
+				// Process::Patch(0x660600, 0xE3A01006);	//0x65F638 EUR
+				// Process::Patch(0x662328, 0xE3A01006);	//0x661360 EUR
 		
 			// Prevent Particle Crash
-				//Process::Write32(0x5506D4, 0xE3A0C000);								//0x54F71C EUR
-				//Process::Write32(0x5509CC, 0xE3A0C000);								//0x54FA14 EUR
-				Process::Write32(0x721418, 0xE3A0C000);									//0x720420 EUR
-				Process::Write32(0x5A2D20, 0xF3); // Rockbreak Particle					//0x5A1D68 EUR
+				//Process::Patch(0x5506D4, 0xE3A0C000);								//0x54F71C EUR
+				//Process::Patch(0x5509CC, 0xE3A0C000);								//0x54FA14 EUR
+				Process::Patch(0x721418, 0xE3A0C000);								//0x720420 EUR
+				Process::Patch(0x5A2D20, 0xF3); // Rockbreak Particle				//0x5A1D68 EUR
 
-			//Fix room edit crash online
-				Process::Write32(0x6D2B44, 0xE3A0008A); //Menu Change to error
-				Process::Write32(0x6708A0, 0xE3A01016); //In-Pocket Animation
+			// Fix room edit crash online
+				Process::Patch(0x6D2B44, 0xE3A0008A); //Menu Change to error
+				Process::Patch(0x6708A0, 0xE3A01016); //In-Pocket Animation
 
-			//Santa bag fix
+			// Santa bag fix
 				Process::Write16(0x68D0EC, 0x7FFE);
 				Process::Write16(0x689574, 0x7FFE);
 
-			//Prevent others from crashing you
-				Process::Write32(0x5980F8, 0xE3A00001); //Disable Sprite Spawn for Anim 0x5F and 0x60
-				Process::Write32(0x5A26B4, 0xE1A00000); //Makes Burying spawn toss sprite on the ground
-				Process::Write32(0x6517E4, 0xE1A00000); //Another fix for buring items
-				Process::Write32(0x651A9C, 0x01000540); //Fixes annoying as heck sound
-				Process::Write32(0x665E50, 0xE3A01006); //Replaces Animation for falling into hole after sit, lay down. Prevents you from accidentally crashing others.
-				Process::Write32(0x68B57C, 0xE3A01016); //Changes "putinpocket" anim after eat
+			// Prevent others from crashing you
+				Process::Patch(0x5980F8, 0xE3A00001); //Disable Sprite Spawn for Anim 0x5F and 0x60
+				Process::Patch(0x5A26B4, 0xE1A00000); //Makes Burying spawn toss sprite on the ground
+				Process::Patch(0x6517E4, 0xE1A00000); //Another fix for buring items
+				Process::Patch(0x651A9C, 0x01000540); //Fixes annoying as heck sound
+				Process::Patch(0x665E50, 0xE3A01006); //Replaces Animation for falling into hole after sit, lay down. Prevents you from accidentally crashing others.
+				Process::Patch(0x68B57C, 0xE3A01016); //Changes "putinpocket" anim after eat
 
 			// Bypass Checks
-				Process::Write32(0x1D43A4, 0xE3A00001);									//0x1D43C4 EUR
-				Process::Write32(0x1D43C0, 0xE3A00001);									//0x1D43E0 EUR
-				Process::Write32(0x1D43D0, 0xE3A00001);									//0x1D43F0 EUR
-				Process::Write32(0x759024, 0xE1A00005);									//0x75802C EUR
-
-				Process::Write32(0x5C3B28, 0xE12FFF1E); //disable mosquito bites
+				Process::Patch(0x1D43A4, 0xE3A00001);									//0x1D43C4 EUR
+				Process::Patch(0x1D43C0, 0xE3A00001);									//0x1D43E0 EUR
+				Process::Patch(0x1D43D0, 0xE3A00001);									//0x1D43F0 EUR
+				Process::Patch(0x759024, 0xE1A00005);									//0x75802C EUR
 
 			// Check for non seed item
-				Process::Write32(0x76A894, 0xE3A00001);									//0x76989C EUR
+				Process::Patch(0x76A894, 0xE3A00001);									//0x76989C EUR
 
 			// Item to inv after pick up
-				Process::Write32(0x323514, 0xE3A00001);									//0x322868 EUR
+				Process::Patch(0x323514, 0xE3A00001);									//0x322868 EUR
 
 			// Inventory base
 				Process::Write32(0x19C1F0, 0xE1A00000); //Eat							//0x19C210 EUR
 				Process::Write32(0x19BA78, 0xE1A00000); //Show off						//0x19BA98 EUR
+			
+			// Patches NPCs from moving back to their fixed position
+				Process::Patch(0x57B9C0, 0xE1A00000);									//0x57AA08 EUR
+
+			// Disable mosquito bites
+				Process::Patch(0x5C3B28, 0xE12FFF1E);
+				
+			// Disable falling down
+				Process::Patch(0x665A84, 0x0A000050);
 
 			// Don't fall in pitfalls / holes
-				Process::Write32(0x65A668, 0xEA000014);									//0x6596A0 EUR
-				Process::Write32(0x6789E4, 0xEA00002D);									//0x677A1C EUR
+				Process::Patch(0x65A668, 0xEA000014);									//0x6596A0 EUR
+				Process::Patch(0x6789E4, 0xEA00002D);									//0x677A1C EUR
 
 			// Other players can't push you
-				Process::Write32(0x652288, 0xEA00002D);									//0x6512C0 EUR
+				Process::Patch(0x652288, 0xEA00002D);									//0x6512C0 EUR
 
 			// Wear helmet and accesory
-				Process::Write32(0x68C630, 0xE1A00000);									//0x68B668 EUR
+				Process::Patch(0x68C630, 0xE1A00000);									//0x68B668 EUR
+
+			// Never bed head
+				Process::Patch(0x20C798, 0xE1A00000);
 
 			// More than 3 num on island
 				Process::Write8(0xAD7158, 2);											//0xAD6158 EUR
 
-			//Unbreakable flowers
-				Process::Write32(USA_NoBreakFlowers_Address, 0xE3A0801D);
+			// Unbreakable flowers
+				Process::Patch(USA_NoBreakFlowers_Address, 0xE3A0801D);
 		}
 	}
 
@@ -121,6 +131,7 @@ namespace CTRPluginFramework
 	static const u16 m_Animation = 0x1A9;
 	static const u16 m_Snake = 0x224;
 	static const u16 m_Collision = 0x4F4;
+	static const u32 m_SaveGardenPlus = 0x89B00; //0x89B00 is SAVE_GARDENPLUS
 
 	Player::Player()
 	{
@@ -138,7 +149,7 @@ namespace CTRPluginFramework
 	{
 		u32 offset, value;
 		while(!Process::Read32(USA_Player_Pointer, offset) || !Process::Read32(offset, value))
-			Sleep(Milliseconds(5));
+			Sleep(Milliseconds(20));
 	}
 
 	/*
@@ -173,12 +184,12 @@ namespace CTRPluginFramework
 	}
 
 	// Return player offset
-	u32 Player::GetOffset(u8 PlayerIndex)
+	u32 Player::GetOffset(u8 PlayerIndex, bool NoChecks)
 	{
 		//Process::Read32(USA_PlayerInfo_Pointer + PlayerIndex * 4, PlayerOffset);
 
 		Process::Write32((u32)&pfunction2, USA_PlayerInstance_Function);
-		return pfunction2(PlayerIndex, 1);
+		return pfunction2(PlayerIndex, NoChecks);
 	}
 
 	bool Player::Exists(u8 PlayerIndex)
@@ -202,13 +213,25 @@ namespace CTRPluginFramework
 		return pfunction4(PlayerInstance, someVal1, someVal2, encVal);
 	}
 
+	PlayerStatus Player::GetPlayerStatus(u8 PlayerIndex)
+	{
+		Process::Write32((u32)&pfunction1, 0x2FF6CC); //0x2FF754 EUR
+		return (PlayerStatus)pfunction1(PlayerIndex);
+	}
+
 	u32 Player::GetSpecificSave(u8 PlayerIndex)
 	{
 		Process::Write32((u32)&pfunction1, 0x2FBA60); //0x2FBAE8 EUR
 		return pfunction1(PlayerIndex);
 	}
 
-	u32 Player::GetPlayerSave(u8 PlayerIndex)
+	ACNL_Player *Player::GetSaveData(u8 PlayerIndex)
+	{
+		u32 *addr = (u32 *)GetSpecificSave(PlayerIndex >= 4 ? (u8)Player::GetPlayerStatus(4) : PlayerIndex);
+		return (ACNL_Player *)addr;
+	}
+
+	u32 Player::GetSaveOffset(u8 PlayerIndex)
 	{
   		vu32(*FUNC)(...);
   		Process::Write32((u32)&FUNC, USA_PlayerSave_Pointer);
@@ -235,8 +258,6 @@ namespace CTRPluginFramework
 			case 0x7A:
 			case 0x7C:
 			case 0x7E:
-			case 0x65:
-			case 0x66:
 				return true;
 		}
 
@@ -342,12 +363,12 @@ namespace CTRPluginFramework
 		return true;
 	}
 
-	bool Player::GetWorldCoords(u32 *wX, u32 *wY, u8 PlayerIndex)
+	bool Player::GetWorldCoords(u32 *wX, u32 *wY, u8 PlayerIndex, bool NoChecks)
 	{
 		if(IsLoaded(PlayerIndex))
 		{
 			Process::Write32((u32)&pfunction4, USA_WorldCoordinates_Function);
-			return pfunction4((u32)wX, (u32)wY, PlayerIndex, 1);
+			return pfunction4((u32)wX, (u32)wY, PlayerIndex, NoChecks);
 		}
 		return false;
 	}
@@ -438,14 +459,14 @@ namespace CTRPluginFramework
 	u32 Player::ReadInventory(u8 Slot)
 	{
 		u32 ID;
-		Process::Read32((GetPlayerSave() + 0x6BD0) + (Slot * 4), ID);
+		Process::Read32((GetSaveOffset() + 0x6BD0) + (Slot * 4), ID);
 		return ID;
 	}
 
 	void Player::WriteInventory(u8 Slot, u32 ID)
 	{
-		Process::Write32((GetPlayerSave() + 0x6BD0) + (Slot * 4), ID);
-		Process::Write32((GetPlayerSave() + 0x6C10) + Slot, 0);
+		Process::Write32((GetSaveOffset() + 0x6BD0) + (Slot * 4), ID);
+		Process::Write32((GetSaveOffset() + 0x6C10) + Slot, 0);
 	}
 
 	/*void Player::ReloadInvIcons() 
@@ -462,17 +483,65 @@ namespace CTRPluginFramework
 			Code::LoadIcon.Call<void>(*(u32 *)(Game::BaseInvPointer() + 0xC) + GetAddData(), i);
 	}*/
 
+	void Player::UpdateStyle(void)
+	{
+		Process::Write32((u32)&pfunction1, 0x68B2E4); //0x68A31C EUR
+		(void)pfunction1(GetOffset());
+	}
+
+	void Player::UpdateTan(void)
+	{
+		ACNL_Player *PlayerSave = Player::GetSaveData();
+		if(!PlayerSave)
+			return;
+		
+		u32 GetStoredData = GetOffset() + 0x1B4; //0x33077570
+		//This Stores the Tan Data Correctly
+		
+		vu32(*TanFunc)(Player_Features* param1);
+		Process::Write32((u32)&TanFunc, 0x713798); //0x7127A0 EUR
+		u8 Tan = TanFunc(&PlayerSave->PlayerFeatures);
+		
+		Process::Write8(GetStoredData + 0x1C0, Tan);
+		
+		//This Updates the Tan
+		Process::Write32((u32)&pfunction1, 0x1D0B90); //0x1D0BB0 EUR
+		(void)pfunction1(GetStoredData);
+	}
+
+	void Player::UpdateGender(u8 Gender)
+	{
+		ACNL_Player *PlayerSave = Player::GetSaveData();
+		if(!PlayerSave)
+			return;
+
+		Process::Write32((u32)&pfunction0, USA_GardenPlus_Pointer);
+		u32 GardenPlus = pfunction0();
+
+		PlayerID oldPlayerID = PlayerSave->PlayerInfo.PlayerData;
+		PlayerSave->PlayerInfo.PlayerData.Gender = Gender;
+		PlayerID newPlayerID = PlayerSave->PlayerInfo.PlayerData;
+
+		for(u32 addr = GardenPlus; addr < (GardenPlus + m_SaveGardenPlus); addr++)
+		{
+			if(*(PlayerID *)addr == oldPlayerID)
+			{
+				*(PlayerID *)addr = newPlayerID;
+			}
+		}
+	}
+
 	void Player::SetOutfit(u16 Out1, u16 Out2, u16 Out3, u16 Out4, u16 Out5, u16 Out6)
 	{
 		u32 x, y;
 		if(Player::GetWorldCoords(&x, &y, Player::GetOnlinePlayerIndex() & 3))
 		{
-		    if(Out1 != 0xFFFF || Out1 != 0) Animation::ExecuteAnimationWrapper(Player::GetOnlinePlayerIndex() & 3, 0x36, Out1, 0, 0, 1, 0, x, y, false, 0); //Hat
-		    if(Out2 != 0xFFFF || Out2 != 0) Animation::ExecuteAnimationWrapper(Player::GetOnlinePlayerIndex() & 3, 0x36, Out2, 1, 1, 1, 0, x, y, false, 0); //Accessory
-		    if(Out3 != 0xFFFF || Out3 != 0) Animation::ExecuteAnimationWrapper(Player::GetOnlinePlayerIndex() & 3, 0x36, Out3, 2, 2, 1, 0, x, y, false, 0); //TopWear
-		    if(Out4 != 0xFFFF || Out4 != 0) Animation::ExecuteAnimationWrapper(Player::GetOnlinePlayerIndex() & 3, 0x36, Out4, 4, 4, 1, 0, x, y, false, 0); //BottomWear
-		    if(Out5 != 0xFFFF || Out5 != 0) Animation::ExecuteAnimationWrapper(Player::GetOnlinePlayerIndex() & 3, 0x36, Out5, 5, 5, 1, 0, x, y, false, 0); //Socks
-		    if(Out6 != 0xFFFF || Out6 != 0) Animation::ExecuteAnimationWrapper(Player::GetOnlinePlayerIndex() & 3, 0x36, Out6, 6, 6, 1, 0, x, y, false, 0); //Shoes
+		    if(Out1 != 0xFFFF && Out1 != 0) Animation::ExecuteAnimationWrapper(Player::GetOnlinePlayerIndex() & 3, 0x36, Out1, 0, 0, 1, 0, x, y, false, 0); //Hat
+		    if(Out2 != 0xFFFF && Out2 != 0) Animation::ExecuteAnimationWrapper(Player::GetOnlinePlayerIndex() & 3, 0x36, Out2, 1, 1, 1, 0, x, y, false, 0); //Accessory
+		    if(Out3 != 0xFFFF && Out3 != 0) Animation::ExecuteAnimationWrapper(Player::GetOnlinePlayerIndex() & 3, 0x36, Out3, 2, 2, 1, 0, x, y, false, 0); //TopWear
+		    if(Out4 != 0xFFFF && Out4 != 0) Animation::ExecuteAnimationWrapper(Player::GetOnlinePlayerIndex() & 3, 0x36, Out4, 4, 4, 1, 0, x, y, false, 0); //BottomWear
+		    if(Out5 != 0xFFFF && Out5 != 0) Animation::ExecuteAnimationWrapper(Player::GetOnlinePlayerIndex() & 3, 0x36, Out5, 5, 5, 1, 0, x, y, false, 0); //Socks
+		    if(Out6 != 0xFFFF && Out6 != 0) Animation::ExecuteAnimationWrapper(Player::GetOnlinePlayerIndex() & 3, 0x36, Out6, 6, 6, 1, 0, x, y, false, 0); //Shoes
 			Sleep(Milliseconds(550));
 			Animation::ExecuteAnimationWrapper(Player::GetOnlinePlayerIndex() & 3, 6, 0, 0, 0, 0, 0, x, y, false, 0);
 		}
@@ -527,9 +596,18 @@ namespace CTRPluginFramework
 
 	void Game::AskReloadRoom(void)
 	{
+		extern bool WantReload;
+		extern bool TimeMachineBool;
+
+		if(WantReload || TimeMachineBool)
+			return;
+
 		Sleep(Milliseconds(20));
 		if(MessageBox("Do you want to reload room?", DialogType::DialogYesNo)())
+		{
+			WantReload = true;
 			Game::ReloadRoom();
+		}
 	}
 	
 	//Get Room Reload Data
@@ -539,9 +617,9 @@ namespace CTRPluginFramework
 		return pfunction0();
 	}
 
-	float *Game::WorldCoordsToCoords(u8 wX, u8 wY, float res[3], u8 PlayerIndex)
+	float *Game::WorldCoordsToCoords(u8 wX, u8 wY, float res[3])
 	{
-		volatile float *coords = Player::GetCoordinates(PlayerIndex);
+		volatile float *coords = Player::GetCoordinates();
 		if(coords != nullptr)
 			res[1] = *(volatile float *)((u32)coords + 4);
 		res[0] = (float)(wX * 0x20 + 0x10);
@@ -554,6 +632,39 @@ namespace CTRPluginFramework
 	{
 		Process::Write32((u32)&pfunction1, USA_OnlinePlayerCount_Function);
 		return pfunction1(*(u32 *)USA_Game_Pointer);
+	}
+
+	StringVector Game::GetOnlinePlayerList()
+	{	
+		StringVector PlayersList;
+		StringVector PresetPlayersList =
+		{
+			Color::Blue << "Player 1 - Blue",
+			Color::Red << "Player 2 - Red",
+			Color::Green << "Player 3 - Green",
+			Color::Yellow << "Player 4 - Yellow",
+		};
+
+		for(u8 i = 0; i < GetOnlinePlayerCount(); i++) // Create a list with all avaliable online players
+		{
+			if(Player::GetOffset(i) == 0x330773BC || Player::GetOffset(i) == 0x330774E8) // If readed offset is yours
+			{
+				PlayersList.push_back(PresetPlayersList[i] + " (You)");
+			}
+			else
+			{
+				PlayersList.push_back(PresetPlayersList[i]);
+			}
+		}
+		return PlayersList;
+	}
+
+	bool Game::OnOnlineIsland()
+	{
+		if(Player::GetOffset() == 0x330774E8)
+			return true;
+		else
+			return false;
 	}
 
 	u32 Game::GetCurrentMap()
@@ -615,10 +726,10 @@ namespace CTRPluginFramework
 		return Items;
 	}
 
-	void Game::AppendCoordData(u32 AnimInst, u32 pos, float *Coord)
+	void Game::AppendCoordData(u32 AnimInst, u32 pos, float* Coords)
 	{
 		Process::Write32((u32)&pfunction2, 0x5D4C88); //0x5D3CD0 EUR
-		pfunction2(AnimInst + pos, *Coord);
+		pfunction2(AnimInst + pos, *Coords);
     }
 
 	//Spawn Particles
@@ -686,7 +797,7 @@ namespace CTRPluginFramework
 		u32 x, y;	
 		Player::GetWorldCoords(&x, &y);
 		std::string& s = k.GetInput();
-		k.GetMessage() = "Type the ID of the building you want." << Color::Lime << "\nHex: 0~FB " << Color::White << "|" << Color::Magenta << Utils::Format(" Actual world coords: x%02Xy%02X\nBuildings: %d/58", x, y, MaxBuildings) << Color::DeepSkyBlue << "\n\nPlacing: " << IDList::GetBuildingName(s != "" ? std::stoi(s, nullptr, 16) : 0);
+		k.GetMessage() = "Type the ID of the building you want." << Color::Lime << "\nHex: 0~FB " << Color::White << "|" << Color::Magenta << Utils::Format(" Actual world coords: x%02Xy%02X\nBuildings: %d/56", x, y, MaxBuildings) << Color::DeepSkyBlue << "\n\nPlacing: " << IDList::GetBuildingName(s != "" ? std::stoi(s, nullptr, 16) : 0);
 	}
 
 	void Game::PlaceBuilding()
@@ -704,20 +815,27 @@ namespace CTRPluginFramework
 		u32 TargetBuilding;
 		u8 MaxBuildings = 0;
 
-		for(u8 i = 0; i < 58; i++) // 58 = Max building slots
+		for(u8 i = 0; i < 56; i++) // 56 = Max building slots
 		{
 			TargetBuilding = USA_Building_Address + (i * 4);
 			if(*(u8 *)(TargetBuilding) < 0xFC) // If isn't an empty slot
 				MaxBuildings++;
 		}
 
-		if(!SetUpKBNo("Type the ID of the building you want." << Color::Lime << "\nHex: 0~FB " << Color::White << "|" << Color::Magenta << Utils::Format(" Actual world coords: x%02Xy%02X\nBuildings: %d/58", x, y, MaxBuildings), true, 2, ID, OnBuildingChange))
+		if(MaxBuildings >= 56)
+		{
+			MessageBox(Color::Red << "Error", Color::White << "You have reached the max buildings possible.")();
+			return;
+		}
+
+		redo:
+		if(!SetUpKBNo("Type the ID of the building you want." << Color::Lime << "\nHex: 0~FB " << Color::White << "|" << Color::Magenta << Utils::Format(" Actual world coords: x%02Xy%02X\nBuildings: %d/56", x, y, MaxBuildings), true, 2, ID, OnBuildingChange))
 			return;
 
 		if(!IDList::BuildingValid(ID))
 		{
 			MessageBox(Color::Red << "Error", Color::White << "Invalid building ID.")();
-			return;
+			goto redo;
 		}
 
 		ID &= 0xFFFF;
@@ -747,7 +865,7 @@ namespace CTRPluginFramework
 		StringVector BuildingList;
 		BuildingList.clear();
 
-		for(u8 i = 0; i < 58; i++) // 58 = Max building slots
+		for(u8 i = 0; i < 56; i++) // 56 = Max building slots
 		{
 			TargetBuilding = USA_Building_Address + (i * 4);
 			if(*(u8 *)(TargetBuilding) < 0xFC) // If isn't an empty slot
@@ -759,7 +877,7 @@ namespace CTRPluginFramework
 			}
 		}
 
-		Keyboard BuildingKb("Choose a building:" << Color::Magenta << Utils::Format("\nActual world coords: x%02Xy%02X\nBuildings: %d/58", x, y, MaxBuildings));
+		Keyboard BuildingKb("Choose a building:" << Color::Magenta << Utils::Format("\nActual world coords: x%02Xy%02X\nBuildings: %d/56", x, y, MaxBuildings));
 
 		Sleep(Milliseconds(80));
 		
@@ -792,7 +910,7 @@ namespace CTRPluginFramework
 		StringVector BuildingList;
 		BuildingList.clear();
 
-		for(u8 i = 0; i < 58; i++) // 58 = Max building slots
+		for(u8 i = 0; i < 56; i++) // 56 = Max building slots
 		{
 			TargetBuilding = USA_Building_Address + (i * 4);
 			if(*(u8 *)(TargetBuilding) < 0xFC) // If isn't an empty slot
@@ -804,7 +922,7 @@ namespace CTRPluginFramework
 			}
 		}
 
-		Keyboard BuildingKb("Choose a building:" << Color::Magenta << Utils::Format("\nActual world coords: x%02Xy%02X\nBuildings: %d/58", x, y, MaxBuildings));
+		Keyboard BuildingKb("Choose a building:" << Color::Magenta << Utils::Format("\nActual world coords: x%02Xy%02X\nBuildings: %d/56", x, y, MaxBuildings));
 
 		Sleep(Milliseconds(80));
 		
@@ -956,7 +1074,7 @@ namespace CTRPluginFramework
 			Process::Write8(PlayerInstance + 0x8CC, ID);
 
 			//animation patch
-			static u32 AnimPatch = 0x682430; //0x681468 EUR
+			static u32 AnimPatch = 0x682434; //0x68146C EUR
 
 			//display pattern, smash rock, bury
 			if(WaitAnim == 0x5D || WaitAnim == 0x6B || WaitAnim == 0x4F || WaitAnim == 0x4C || WaitAnim == 0x50 || WaitAnim == 0x52 || WaitAnim == 0x5A || WaitAnim == 0x5F || WaitAnim == 0x60 || WaitAnim == 0x61 || WaitAnim == 0x7E || WaitAnim == 0x87 || WaitAnim == 0xAC)
@@ -1049,7 +1167,7 @@ namespace CTRPluginFramework
 			if(!noWait)
 			{
 				Sleep(Milliseconds(40));
-				Process::Write32(AnimPatch, 0xEBFC5347);
+				Process::Write32(AnimPatch, 0xE3700001);
 			}
 		}
 		return true;
@@ -1096,6 +1214,12 @@ namespace CTRPluginFramework
 		pfunction4(wX, wY, RoomID, param_4);
 	}
 
+	Item_Categories Items::GetItemCategorie(u32 itemID)
+	{
+		Process::Write32((u32)&pfunction1, 0x2FCBC4); //0x2FCC4C EUR
+		return (Item_Categories)pfunction1(itemID);
+	}
+
 	bool Animation::ExecuteAnimation(u32 PlayerInst, u8 AnimID, u32 AnimInst)
 	{
 		Process::Write32((u32)&pfunction4, USA_Animation_Function);
@@ -1132,7 +1256,7 @@ namespace CTRPluginFramework
 	//Gets used to write the coordinates of the animation
 		float coords[3];
 		Process::Write32((u32)&pfunction2, 0x5D4C88);
-		pfunction2(AnimInstance + 2, (u32)Game::WorldCoordsToCoords(wX, wY, coords, PlayerIndex));
+		pfunction2(AnimInstance + 2, (u32)Game::WorldCoordsToCoords(wX, wY, coords));
 		
 	//Knock Door patch
 		u32 Knock = 0x655400; //0x654438 EUR
@@ -1259,7 +1383,7 @@ namespace CTRPluginFramework
 			case 0x7F:
 				{
 					Process::Write32((u32)&pfunction2, 0x5D4C88);
-					pfunction2(AnimInstance + 0xF, (u32)Game::WorldCoordsToCoords(wX, wY, coords, PlayerIndex));
+					pfunction2(AnimInstance + 0xF, (u32)Game::WorldCoordsToCoords(wX, wY, coords));
     
         			Process::Write8(AnimInstance + 0x13, *(u8 *)(PlayerInstance + 0x2F));
 				}
@@ -1304,7 +1428,7 @@ namespace CTRPluginFramework
 					Game::AppendCoordData(AnimInstance, 0x2, Player::GetCoordinates(PlayerIndex));
 
 					Process::Write32((u32)&pfunction2, 0x5D4C88);
-					pfunction2(AnimInstance + 0xE, (u32)Game::WorldCoordsToCoords(wX, wY, coords, PlayerIndex));
+					pfunction2(AnimInstance + 0xE, (u32)Game::WorldCoordsToCoords(wX, wY, coords));
     
         			Process::Write8(AnimInstance + 0x12, *(u8 *)(PlayerInstance + 0x2F));
         			Process::Write8(AnimInstance + 0x13, EmotionID & 0xFF);
@@ -1316,7 +1440,7 @@ namespace CTRPluginFramework
 			case 0xB5:
 				{
 					Process::Write32((u32)&pfunction2, 0x5D4C88);
-					pfunction2(AnimInstance + 0xE, (u32)Game::WorldCoordsToCoords(wX, wY, coords, PlayerIndex));
+					pfunction2(AnimInstance + 0xE, (u32)Game::WorldCoordsToCoords(wX, wY, coords));
     
         			Process::Write32(AnimInstance + 0x12, AnimItem);
 				}
@@ -1450,7 +1574,7 @@ namespace CTRPluginFramework
 					Process::Write8(AnimInstance + 0x15, 1);
 
 					Process::Write32((u32)&pfunction2, 0x5D4C88);
-					pfunction2(AnimInstance + 0xF, (u32)Game::WorldCoordsToCoords(wX, wY, coords, PlayerIndex));
+					pfunction2(AnimInstance + 0xF, (u32)Game::WorldCoordsToCoords(wX, wY, coords));
 				}
 				break;
 		//switch on light
@@ -1460,7 +1584,7 @@ namespace CTRPluginFramework
         			Process::Write8(AnimInstance + 0xF, wY);
 
 					Process::Write32((u32)&pfunction2, 0x5D4C88);
-					pfunction2(AnimInstance + 0x10, (u32)Game::WorldCoordsToCoords(wX, wY, coords, PlayerIndex));
+					pfunction2(AnimInstance + 0x10, (u32)Game::WorldCoordsToCoords(wX, wY, coords));
 				}
 				break;
 		//rock hit
@@ -1475,7 +1599,7 @@ namespace CTRPluginFramework
         			Process::Write8(AnimInstance + 0x1A, 1); //rock break
 
 					Process::Write32((u32)&pfunction2, 0x5D4C88);
-					pfunction2(AnimInstance + 0x12, (u32)Game::WorldCoordsToCoords(wX, wY, coords, PlayerIndex));
+					pfunction2(AnimInstance + 0x12, (u32)Game::WorldCoordsToCoords(wX, wY, coords));
 				}
 				break;
 		//congrats
@@ -1499,7 +1623,7 @@ namespace CTRPluginFramework
 
 
 					Process::Write32((u32)&pfunction2, 0x5D4C88);
-					pfunction2(AnimInstance + 0x12, (u32)Game::WorldCoordsToCoords(wX, wY, coords, PlayerIndex));
+					pfunction2(AnimInstance + 0x12, (u32)Game::WorldCoordsToCoords(wX, wY, coords));
     
         			u16 var1 = *(u16 *)(PlayerInstance + 0x2E);
         			Process::Write8(AnimInstance + 0x17, (char)((int)var1 >> 8));
@@ -1825,7 +1949,7 @@ namespace CTRPluginFramework
 		return *(u32 *)(npcData + 0x9AC);
 	}
 
-	void NPC::GetLoadedNPC(NPCdataVector &vec)
+	void NPC::GetLoadedNPC(NPC_DataVector &vec)
 	{
 		vec.clear();
 		u32 data = 0;
@@ -1841,7 +1965,7 @@ namespace CTRPluginFramework
 			if(data != 0)
 			{
 				SPVID = GetSPVID(data);
-				vec.push_back(NPCdata{ GetSPName(SPVID), data });
+				vec.push_back(NPC_Data{ GetSPName(SPVID), data });
 			}
 		}
 
@@ -1849,14 +1973,14 @@ namespace CTRPluginFramework
 		data = GetData(0x18C);
 		if(data != 0)
 		{
-			vec.push_back(NPCdata{ GetSPName(0x15), data }); //0x15 is Kappn's SPVID (it isn't in the RAM when he is loaded there)
+			vec.push_back(NPC_Data{ GetSPName(0x15), data }); //0x15 is Kappn's SPVID (it isn't in the RAM when he is loaded there)
 		}
 
 		//Special Case (Tour Tortimer (specifically at the tour results))	
 		data = GetData(0x18B);
 		if(data != 0)
 		{
-			vec.push_back(NPCdata{ GetSPName(0x41), data }); //0x41 is Tortimers's SPVID (it isn't in the RAM when he is loaded there)
+			vec.push_back(NPC_Data{ GetSPName(0x41), data }); //0x41 is Tortimers's SPVID (it isn't in the RAM when he is loaded there)
 		}
 
 		//NNPC
@@ -1866,7 +1990,7 @@ namespace CTRPluginFramework
 			if(data != 0)
 			{
 				VID = GetVID(data);
-				vec.push_back(NPCdata{ GetNName(VID), data });
+				vec.push_back(NPC_Data{ GetNName(VID), data });
 			}
 		}
 
@@ -1877,7 +2001,7 @@ namespace CTRPluginFramework
 			if(data != 0)
 			{
 				VID = GetVID(data);
-				vec.push_back(NPCdata{ GetNName(VID), data });
+				vec.push_back(NPC_Data{ GetNName(VID), data });
 			}
 		}
 
@@ -1888,7 +2012,7 @@ namespace CTRPluginFramework
 			if(data != 0)
 			{
 				VID = GetVID(data);
-				vec.push_back(NPCdata{ GetNName(VID), data });
+				vec.push_back(NPC_Data{ GetNName(VID), data });
 			}
 		}
 
@@ -1901,7 +2025,7 @@ namespace CTRPluginFramework
 				save = GetPlayerSave(data);
 				str = "";
 				Process::ReadString(save + 0x55A8, str, 16, StringFormat::Utf16); 
-				vec.push_back(NPCdata{ str, data });
+				vec.push_back(NPC_Data{ str, data });
 			}
 		}
 
@@ -1914,7 +2038,7 @@ namespace CTRPluginFramework
 				save = GetPlayerSave(data);
 				str = "";
 				Process::ReadString(save + 0x55A8, str, 16, StringFormat::Utf16); 
-				vec.push_back(NPCdata{ str, data });
+				vec.push_back(NPC_Data{ str, data });
 			}
 		}
 
@@ -1927,7 +2051,7 @@ namespace CTRPluginFramework
 				save = GetPlayerSave(data);
 				str = "";
 				Process::ReadString(save + 0x55A8, str, 16, StringFormat::Utf16); 
-				vec.push_back(NPCdata{ str, data });
+				vec.push_back(NPC_Data{ str, data });
 			}
 		}
 	}
@@ -2016,7 +2140,7 @@ namespace CTRPluginFramework
 		if(((ItemID == 0x7FFE) || (ItemID == 0x80007FFE) || (ItemID == 0x585B) || ValidID16(ItemID, 0, 0xFD)) && ((Flags <= 0x3407) || (Flags == 0x8000)))
 			return true;
 
-		if((ValidID16(ItemID, 0x2001, 0x2060) || ValidID16(ItemID, 0x2089, 0x2185) || ValidID16(ItemID, 0x21E4, 0x22DF) || ValidID16(ItemID, 0x22E1, 0x30CB) || ValidID16(ItemID, 0x30D2, 0x3108) || ValidID16(ItemID, 0x3130, 0x33B4) || ValidID16(ItemID, 0x33BC, 0x34CD) || ValidID16(ItemID, 0x3726, 0x372A)) && ((Flags <= 0x3407) || (Flags == 0x8000)))
+		if((ValidID16(ItemID, 0x2001, 0x2060) || ValidID16(ItemID, 0x2089, 0x2185) || ValidID16(ItemID, 0x21E4, 0x22DF) || ValidID16(ItemID, 0x22E1, 0x30CB) || ValidID16(ItemID, 0x30D2, 0x3108) || ValidID16(ItemID, 0x3130, 0x33B4) || ValidID16(ItemID, 0x33BC, 0x34CD) || ValidID16(ItemID, 0x3726, 0x372A) || ValidID16(ItemID, 0x4000, 0x50CB) || ValidID16(ItemID, 0x50D2, 0x5FFF)) && ((Flags <= 0x3407) || (Flags == 0x8000)))
 			return true;
 		
 		return false;
@@ -2168,7 +2292,7 @@ namespace CTRPluginFramework
 		return true;
 	}
 
-	bool IDList::MusicValid(u8 MusicID)
+	bool IDList::MusicValid(u8 MusicID) // not completed
 	{
 		switch(MusicID) 
 		{
@@ -2183,13 +2307,99 @@ namespace CTRPluginFramework
 		return true;
 	}
 
-	std::string IDList::GetRoomName(u8 ID) 
+	bool IDList::ParticleValid(u16 Particle)
 	{
-		for(const ID_Data& rooms : Rooms)
+		if(!ValidID16(Particle, 0, 0x246))
+			return false;
+
+		return true;
+	}
+
+	static const ID_DataVector& GetItemsList()
+	{
+		static const ID_DataVector ItemsList = []()
 		{
-			if(rooms.ID == ID)
+			ID_DataVector Database;
+			std::string FilePath = "Luna/ItemsList.txt";
+			File ItemsFile(FilePath, File::READ);
+			
+			if(ItemsFile.IsOpen())
 			{
-				return std::string(rooms.Name);
+				std::string content = ReadWholeTxtFile(FilePath);
+				size_t lineStart = 0;
+				
+				while(lineStart < content.length())
+				{
+					size_t lineEnd = content.find('\n', lineStart);
+					if(lineEnd == std::string::npos)
+						lineEnd = content.length();
+					
+					// Line extraction and cleaning
+					std::string line = content.substr(lineStart, lineEnd - lineStart);
+					line.erase(0, line.find_first_not_of(" \t"));
+					line.erase(line.find_last_not_of(" \t") + 1);
+					
+					if(!line.empty())
+					{
+						size_t spacePos = line.find(' ');
+						if(spacePos != std::string::npos)
+						{
+							// ID Conversion
+							u16 ID = 0;
+							std::string idStr = line.substr(0, spacePos);
+							for(char c : idStr)
+							{
+								ID = (ID << 4) | (c >= '0' && c <= '9' ? c - '0' :
+									c >= 'A' && c <= 'F' ? 10 + c - 'A' :
+									c >= 'a' && c <= 'f' ? 10 + c - 'a' : 0);
+							}
+							
+							// Name extraction
+							std::string name = line.substr(spacePos + 1);
+							name.erase(0, name.find_first_not_of(" \t"));
+							name.erase(name.find_last_not_of(" \t") + 1);
+							
+							if(ID != 0 && !name.empty())
+							{
+								ID_Data entry;
+								name.pop_back();
+								entry.Name = strdup(name.c_str()); // Storage Name
+								entry.IDs.push_back(ID); // Storage ID
+								Database.push_back(entry);
+							}
+						}
+					}
+					lineStart = lineEnd + 1;
+				}
+			}
+			return Database;
+		}();
+
+		return ItemsList;
+	}
+
+	std::string IDList::GetItemName(u16 ID)
+	{
+		const ID_DataVector& Items = GetItemsList();
+
+		for(const ID_Data& item : Items)
+		{
+			if(std::find(item.IDs.begin(), item.IDs.end(), ID) != item.IDs.end())
+			{
+				return std::string(item.Name);
+			}
+		}
+
+		return Items.empty() ? "" : "Unknown Item";
+	}
+
+	std::string IDList::GetRoomName(u8 ID)
+	{
+		for(const ID_Data& room : Rooms)
+		{
+			if(std::find(room.IDs.begin(), room.IDs.end(), ID) != room.IDs.end())
+			{
+				return std::string(room.Name);
 			}
 		}
 
@@ -2198,11 +2408,11 @@ namespace CTRPluginFramework
 
 	std::string IDList::GetBuildingName(u8 ID)
 	{
-		for(const ID_Data& buildings : Buildings)
+		for(const ID_Data& building : Buildings)
 		{
-			if(buildings.ID == ID)
+			if(std::find(building.IDs.begin(), building.IDs.end(), ID) != building.IDs.end())
 			{
-				return std::string(buildings.Name);
+				return std::string(building.Name);
 			}
 		}
 
@@ -2211,15 +2421,28 @@ namespace CTRPluginFramework
 
 	std::string IDList::GetOutdoorMusicName(u8 ID)
 	{
-		for(const ID_Data& outdoormusics : OutdoorMusics)
+		for(const ID_Data& outdoormusic : OutdoorMusics)
 		{
-			if(outdoormusics.ID == ID)
+			if(std::find(outdoormusic.IDs.begin(), outdoormusic.IDs.end(), ID) != outdoormusic.IDs.end())
 			{
-				return std::string(outdoormusics.Name);
+				return std::string(outdoormusic.Name);
 			}
 		}
 
 		return Color::Red << "Invalid music!";
+	}
+
+	std::string IDList::GetParticleName(u16 ID)
+	{
+		for(const ID_Data& particle : Particles)
+		{
+			if(std::find(particle.IDs.begin(), particle.IDs.end(), ID) != particle.IDs.end())
+			{
+				return std::string(particle.Name);
+			}
+		}
+
+		return Color::Red << "Invalid particle!";
 	}
 
 	u32 Camera::GetInstance()

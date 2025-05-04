@@ -4,6 +4,8 @@
 #include "CTRPluginFramework.hpp"
 #include "Strings.hpp"
 
+// Most of struct found by Slattz
+
 namespace CTRPluginFramework
 {
     using StringVector = std::vector<std::string>;
@@ -12,11 +14,24 @@ namespace CTRPluginFramework
     using u16Vector = std::vector<u16>;
     using u32Vector = std::vector<u32>;
     using u64Vector = std::vector<u64>;
-    
+
+    enum class PlayerStatus : u8
+    {
+        Town_00 = 0,
+        Town_01 = 1,
+        Town_02 = 2,
+        Town_03 = 3,
+        Isl_00 = 4,
+        Isl_01 = 5,
+        Isl_02 = 6,
+        Isl_03 = 7,
+        Empty = 8
+    };
+
     struct ID_Data 
     {
 		const char* Name; //name of ID
-		u8 ID; //ID
+		u16Vector IDs; //ID
 	};
 
     struct PACKED Coordinates
@@ -26,6 +41,23 @@ namespace CTRPluginFramework
         float z;
     };
 
+    struct DropPkt
+	{
+		u32 replaceID;
+		u32 placeID;
+		u32 showID;
+		u8 combinedDropIDPlayerIndex;
+		u8 processFlags;
+		u8 paramFlags;
+		u8 flags;
+		u8 u0;
+		u8 u1;
+		u8 roomID;
+		u8 wX;
+		u8 wY;
+		u8 u2;
+	};
+
     struct TramplePkt 
     {
 		u32 Item;
@@ -34,6 +66,165 @@ namespace CTRPluginFramework
 		u8 worldY;
 		u8 u0;
 	};
+
+    enum Item_Categories
+    {
+        MiiHead = 0, //(0x2000)
+        NPCBuildingItems, //(0x2061 -> 0x2074)
+        Bells, //(0x20AC -> 0x2117)
+        Wallpaper, //(0x234C -> 0x23EA)
+        Carpets, //(0x23EB -> 0x2492)
+        Furniture, //(0x29DF -> 0x30CB)
+        Shirts, //(0x2495 -> 0x2681)
+        Dresses, //(0x2682 -> 0x26EC)
+        Wetsuits, //(0x26ED -> 0x26F5)
+        Trousers, //(0x26F8 -> 0x2776)
+        Socks, //(0x2777 -> 0x279E)
+        Shoes, //(0x279F -> 0x27E5)
+        Hats, //(0x280B -> 0x28F4)
+        Accesories, //flower accesories not included(0x28F5 -> 0x292E)
+        Axes, //(0x334C -> 0x334F)
+        Nets, //(0x3350 -> 0x3353)
+        Rods, //(0x3354 -> 0x3357)
+        Shovels, //(0x3358 -> 0x335B)
+        Slingshots, //(0x3360 -> 0x3363)
+        Cans, //(0x335C -> 0x335F)
+        ToyHammer, //(0x3364 -> 0x3365)
+        Megaphone, //(0x3366)
+        Timer, //(0x3367)
+        HandheldFireworks, //(0x3368 -> 0x3369) 
+        FountainFirework, //(0x339F)
+        Umbrellas, //(0x27E6 -> 0x280A) 
+        PartyPopper, //(0x336A)
+        BubbleWands, //(0x336B)
+        Balloons, //(0x336C -> 0x3383) 
+        Pinwheels, //(0x3384 -> 0x338B)
+        Beans, //(0x338E)
+        Good_LuckRoll, //(0x338F)
+        Soft_Serves, //(0x3390 -> 0x3393)
+        IceCream, //(0x3394 -> 0x3397)
+        Wands, //(0x3398 -> 0x339D)
+        Tweeter, //(0x339E)
+        Bugs, //(0x228E -> 0x22D5)
+        Feathers, //(0x22D7 -> 0x22DE)
+        Snowflake, //(0x22D6)
+        Fish, //(0x22E1 -> 0x2328)
+        SeaCreatures, //(0x232D -> 0x234A)
+        MailPapers, //(0x223F -> 0x2281)
+        MelodyPaper, //(0x2282)
+        Fossil, //(0x202A)
+        AnalyzedFossils, //(0x3130 -> 0x3172)
+        FossilModels, //(0x3173 -> 0x3186)
+        Gyroids, //(0x295C -> 0x29DE)
+        Songs, //(0x212B -> 0x2185)
+        Unknown1, //(0x2186 -> 0x2188)
+        SongsWall, //(0x2189 -> 0x21E3)
+        SongsMusicBox, //(0x21E4 -> 0x223E)
+        Fruits, //(0x2001 -> 0x200D)
+        PerfectFruits, //(0x200E -> 0x2012)
+        RottenFruits, //(0x2013 -> 0x2017)
+        FlowerBags, //(0x2038 -> 0x2060)
+        TreeSaplings, //(0x202C -> 0x202D)
+        BushShoots, //(0x202E -> 0x2035)
+        Turnips, //(0x2283 -> 0x228C)
+        SpoiledTurnips, //(0x228D)
+        Sold_OutSigns1, //Nooklings and Gracie(0x2083 -> 0x2084)
+        Seashells, //(0x208C -> 0x2095)
+        Garbage, //(0x2329 -> 0x232B)
+        Mushrooms, //(0x2098 -> 0x209D)
+        MushroomFurniture, //(0x211E -> 0x212A)
+        FlowerAccesories, //(0x292F -> 0x295B)
+        PitfallSeeds, //(0x209F -> 0x20A0)
+        SpecialOres, //gold and silver nugget(0x20A1 -> 0x20A2)
+        Ores, //(0x20A3 -> 0x20A6)
+        Ingredients, //butter, milk, etc(0x20A7 -> 0x20AB)
+        Beehive, //(0x209E)
+        Fertilizer, //(0x202B)
+        ProPatternShirt, //(0x33A7)
+        PatternItems, //like knit hat, horned hat, etc(0x33A8 -> 0x33BB)
+        WrappingPaper, //(0x2089)
+        Medicine, //(0x208A)
+        SignatureSheet, //(0x33BC)
+        PetitionForm, //(0x33BD)
+        PaperScrap, //(0x33BE)
+        UnknownLostItem, //lost item not checked yet(0x33BF -> 0x33C2)
+        KnownLostItem, //checked lost item(0x33C3 -> 0x33C6)
+        SantaBag, //(0x33A1)
+        MysteryBag, //(0x33A2)
+        Candy, //(0x2096)
+        Lollipop, //(0x2097)
+        RealPaintings, //(0x30D2 -> 0x30EA)
+        FakePaintings, //(0x30F3 -> 0x3100)
+        RealPaintingsWall, //(0x3109 -> 0x3121)
+        FakePaintingsWall, //(0x3122 -> 0x312F)
+        RealStatues, //(0x30EB -> 0x30F2)
+        FakeStatues, //(0x3101 -> 0x3108)
+        FortuneCookie, //(0x33C8)
+        FortuneCookieSlips, //(0x33C9 -> 0x3401)
+        BadgesSprite, //(0x340C -> 0x340E)
+        HouseMailBoxs, //(0x3426 -> 0x343B)
+        HouseArchedDoors, //(0x343C -> 0x3451)
+        HouseDoors, //(0x3452 -> 0x3466)
+        HouseRoofs, //(0x3467 -> 0x3489)
+        HouseFences, //(0x348A -> 0x34A0)
+        HouseExteriors, //(0x34A1 -> 0x34C0)
+        HousePavements, //(0x34C1 -> 0x34C9)
+        HouseArchitectures, //(0x34CA -> 0x34CD)
+        WaterEgg, //(0x232C)
+        Deep_SeaEgg, //(0x234B)
+        EarthEgg, //(0x2118)
+        TreeEgg, //(0x2119)
+        StoneEgg, //(0x211A)
+        SkyEgg, //(0x211B)
+        WinningTicket, //(0x211C)
+        Grand_PrizeTicket, //(0x211D)
+        Present, //(0x2036)
+        Map, //(0x340F)
+        Trophies, //(0x3417 -> 0x3419)
+        FireworkUsed, //(0x33A0)
+        CoffeeBeans, //(0x33A3 -> 0x33A5)
+        ChocolateCoin, //(0x33A6)
+        Coffee, //(0x338C)
+        FizzyAppleJuice, //(0x338D)
+        FruitBaskets, //(0x2018 -> 0x2024)
+        PerfectFruitBaskets, //(0x2025 -> 0x2029)
+        MovingBoxes, //(0x207E -> 0x2080)
+        BingoCard, //(0x341A)
+        BingoCardExpired, //(0x341B)
+        TimeCapsule, //(0x341C)
+        Mannequins, //(0x30CC -> 0x30CF)
+        Sold_OutSigns2, //Retail(0x2085)
+        TPC, //(0x3410)
+        Lockers, //Train Station and Museum(0x2081 -> 0x2082)
+        Chairs, //Retail, Island Hut and Harvey(0x207B -> 0x207D)
+        FlowerSprites, //(0x341F -> 0x3425)
+        Towel, //(0x33C7)
+        Vests, //Male and Female(0x2493 -> 0x2494)
+        Shorts, //Male and Female (0x26F6 -> 0x26F7)
+        Photos, //(0x3187 -> 0x334B)
+        Sold_OutSigns1Wall, //Nooklings and Gracie(0x2086 -> 0x2087)
+        LostBook, //(0x3411)
+        ChocolateHeart, //(0x208B)
+        Scavenger_HuntList, //(0x341D)
+        Mail, //(0x3412)
+        VillagerPresent, //(0x2037)
+        Sold_OutSigns3, //Redd(0x2088)
+        ShopItemHangups, //1x1 and 1x2(0x2079 -> 0x207A)
+        ReddsCookie, //(0x3402)
+        Tickets, //(0x3403 -> 0x340B)
+        MuseumItems, //Podium, Stands and Wallpaper(0x2075 -> 0x2078)
+        ClubTortimerForm, //(0x341E)
+        GracieMannequins, //(0x30D0 -> 0x30D1)
+        Seeds, //Flower seed, sapling(0x3413 -> 0x3416)
+        ShirtsWall, //(0x34CE -> 0x36BA)
+        DressesWall, //(0x36BB -> 0x3725)
+        MagicLamp, //(0x3726)
+        RetailGiantItem, //giant item sign and box(0x3727 -> 0x3728)
+        FryingPan, //(0x3729)
+        Good_LuckCharm, //(0x22DF)
+        IkadaTrophy, //(0x372A)
+        Unknown2, //(0x22E0)
+    };
 
     struct Emoticons
     {
@@ -46,7 +237,7 @@ namespace CTRPluginFramework
         u16Vector OutfitPiece; // Each piece of the player’s outfit
     };
 
-    struct NPCdata
+    struct NPC_Data
     {
         std::string name;
         u32 data;
@@ -936,96 +1127,96 @@ namespace CTRPluginFramework
     {
         u32 Checksum1; //0xA0 //Checksum of the first 0x6b84 of player data
         Player_Features PlayerFeatures;
-        u16 Hat; //0xAA //Item ID < 0xXXXX
-        u16 Accessory; //0xAE //Item ID < 0xXXXX
-        u16 TopWear; //0xB2 //Item ID < 0xXXXX
-        u16 UnderTopWear; //0xB6 //Item ID < 0xXXXX
-        u16 BottomWear; //0xBA //Item ID < 0xXXXX
-        u16 Socks; //0xBE //Item ID < 0xXXXX
-        u16 Shoes; //0xC2 //Item ID < 0xXXXX
-        u16 HeldItem; //0xC6 //Item ID < 0xXXXX
-        u8 Unknown0; //0xCA //Inverted gender(?): 1 for male, 0 for female. Default = 1 in PlayerConstructor (EUR 1.5 0x20D27C)
-        u8 Padding_0 = 0; //0xCB
-        ACNL_Pattern Patterns[10]; //0xCC //10 Patterns
-        u8 PatternOrder[10]; //0x552C -> 0x5535 //Order of patterns from 0x0 - 0x9
+        u32 Hat; //0xA //Item ID < 0xXXXX
+        u32 Accessory; //0xE //Item ID < 0xXXXX
+        u32 TopWear; //0x12 //Item ID < 0xXXXX
+        u32 UnderTopWear; //0x16 //Item ID < 0xXXXX
+        u32 BottomWear; //0x1A //Item ID < 0xXXXX
+        u32 Socks; //0x1E //Item ID < 0xXXXX
+        u32 Shoes; //0x22 //Item ID < 0xXXXX
+        u32 HeldItem; //0x26 //Item ID < 0xXXXX
+        u8 Unknown0; //0x2A //Inverted gender(?): 1 for male, 0 for female. Default = 1 in PlayerConstructor (EUR 1.5 0x20D27C)
+        u8 Padding_0 = 0; //0x2B
+        ACNL_Pattern Patterns[10]; //0x2C //10 Patterns
+        u8 PatternOrder[10]; //0x548C -> 0x5495 //Order of patterns from 0x0 - 0x9
         u16 Padding_1; //0x5536 //U16 Zero Padding; Always 0x0000
         MiiData1 PlayerMii;
-        u8 HasMii; //0x55E0 //Values: 0 = No Mii, 1 = Has Mii, <1 = Has Mii, face doesn't show
-        u8 Padding_2; //0x55E1 //Not Verified: U8 Zero Padding; Always 0x00
-        u16 Padding_3; //0x55E2 -> 0x55E3 //Not Verified: U16 Zero Padding; Always 0x0000
+        u8 HasMii; //0x5496 //Values: 0 = No Mii, 1 = Has Mii, <1 = Has Mii, face doesn't show
+        u8 Padding_2; //0x5541 //Not Verified: U8 Zero Padding; Always 0x00
+        u16 Padding_3; //0x5542 -> 0x5543 //Not Verified: U16 Zero Padding; Always 0x0000
         Mannequin Mannequin1;
         Mannequin Mannequin2;
         Mannequin Mannequin3;
         Mannequin Mannequin4;
-        u16 Padding_4; //0x5644
-        PersonalID PlayerInfo; //0x5646 -> 0x5671
-        u8 BirthMonth; //0x5674
-        u8 BirthDay; //0x5675
-        u16 YearRegistered; //0x5676
-        u8 MonthRegistered; //0x5678
-        u8 DayRegistered; //0x5679
-        u16 Padding_5; //0x567A: Zero Padding; Always 0x0000  
-        PlayerBadges Badges; //0x567C -> 0x5763
-        HHAHouseInfo HHAHouse; //0x5764 -> 0x5789
-        ACNL_DreamAddress DreamCode;  //0x5790 -> 0x579B
-        u32 Padding_6; //0x579C -> 0x579F
-        Player_Flags PlayerFlags; //0x57A0 -> 0x57D3
-        u32 HasTPCPic; //0x57D4 -> 0x57D7
-        u8 TPCPic[0x1400]; //0x57D8 -> 0x6BD7
-        u16/*wchar*/ TPCText[33]; //0x6BD8 -> 0x6C19
-        u8 Unknown1; //0x6C1A //Unknown: Was 1 on a save, 2 on another
-        u8 Unknown2; //0x6C1B
-        u32 Unknown3; //0x6C1C -> 0x6C19
-        u32 Unknown4; //0x6C20 -> 0x6C23
-        u32 Padding_7; //0x6C24 -> 0x6C27
-        u32 Checksum2; //0x6C28 -> 0x6C2B
-        u64 BankAmount; //0x6C2C -> 0x6C33: Encrypted Value
-        u64 DebtAmount; //0x6C34 -> 0x6C3B: Encrypted Value
-        u64 MedalAmount; //0x6C3C -> 0x6C43: Encrypted Value
-        u64 BellsFromReeseAmount; //0x6C44 -> 0x6C4B: Encrypted Value
-        u32 Padding_8; //0x6C4C -> 0x6C4F
-        s64 Playtime; //0x6C50 -> 0x6C57
-        TownID TownData2; //0x6C68 -> 0x6C5D
-        u16 Padding_10; //0x6C6E -> 0x6C6F
-        u32 Inventory[16]; //0x6C70 -> 0x6CAF
-        u8 InventoryItemLocks[16]; //0x6CB0 -> 0x6CBF
-        u32 UnlockedItems[0xBA]; //0x6CC0 -> 0x6FA7 //Game uses one big bitfield for items 'unlocked'. Bits correspond to item ids. Used for catalog, encyclopedia, etc
-        u64 PocketMoney; //0x6FA8 -> 0x6FAF: Encrypted Value
-        u32 IslandBox[40]; //0x6FB0 -> 0x704F
-        u32 IslandInventory[16]; //0x7050 -> 0x708F
-        u8 IslandInventoryItemLocks[16]; //0x7090 -> 0x709F: may be Padding also, needs testing
-        u32 UnknownItem1; //0x70A0 -> 0x70A3
-        u32 UnknownItem2; //0x70A4 -> 0x70A7
-        ACNL_Letter Letters[10]; //0x70A8 -> 0x89A7
-        u16/*wchar*/ LetterHeader[0x20]; //0x89A8 -> 0x89E7
-        u16 Padding_11; //0x89E8 -> 0x89E9
-        u16/*wchar*/ FutureLetterHeader[0x20]; //0x89EA -> 0x8A29
-        u16 Padding_12; //0x8A2A -> 0x8A2B    
-        u16/*wchar*/ LetterSignature[0x20]; //0x8A2C -> 0x8A6B
-        u16 Padding_13; //0x8A6C -> 0x8A6D
-        u8 DefaultLtrRecieverNameIndent; //0x8A6E -> 0x8A6E
-        u8 DefaultFutureLtrRecieverNameIndent; //0x8A6F -> 0x8A6F //Cannot be >= 0x20
-        Emoticons Emotes; //0x8A70 -> 0x8A97 //Players Emotes (40 slots)
-        s8 EmotePage; //0x8A98 -> 0x8A98 //0xFF = Page 1, 0x00 = Page 2
-        u8 Padding_14; //0x8A99 -> 0x8A99
-        u16 SpotpassDLCRecievedIds[32]; //0x8A9A -> 0x8AD9 //Not Verified; 0xFFFF is default, then 0xXXXX is ID of DLC recieved
-        u16 Padding_15; //0x8ADA -> 0x8ADB
-        UnknownStruct1 UnkBuffer1; //0x8ADC -> 0x8B5B
-        u16 Padding_16; //0x8B5C -> 0x8B5D
-        LyleFlags LyleFlag; //0x8B5E
-        u8 HasDeductions__; //0x8B5F //Not 100% sure; something to do with items facing a wall, therefore deductions; Reads HouseUnk9 later in code
-        u8 HHAAwardsUnlockedDupe; //0x8B60
-        u8 GoldExteriorsUnlockedDupe; //0x8B60
-        u8 HHAUnk1; //0x8B62
-        u8 HHAUnk2; //0x8B63 //READU8(CurrentHouseTheme+1) | 0x80; Only When Exterior/Theme???
-        u8 HHAUnk3[0x1C]; //0x8B63 -> //0x8B7F //Come back to later
-        UnknownStruct2 UnkBuffer2; //0x8B80 -> 0x8DBB
-        u64 MeowCoupons; //0x8DBC -> 0x8DC3: Encrypted Value
-        u64 Unk2; //0x8DC4 -> 0x8DCB: Encrypted Value
-        u64 Unk3; //0x8DCC -> 0x8DD3: Encrypted Value
-        u64 Unk4; //0x8DD4 -> 0x8DDB: Encrypted Value
-        u64 Unk5; //0x8DDC -> 0x8DE3: Encrypted Value
-        u64 Unk6; //0x8DE4 -> 0x8DEB: Encrypted Value
+        u16 Padding_4; //0x55A4
+        PersonalID PlayerInfo; //0x55A6 -> 0x55D1
+        u8 BirthMonth; //0x55D4
+        u8 BirthDay; //0x55D5
+        u16 YearRegistered; //0x55D6
+        u8 MonthRegistered; //0x55D8
+        u8 DayRegistered; //0x55D9
+        u16 Padding_5; //0x55DA: Zero Padding; Always 0x0000  
+        PlayerBadges Badges; //0x55DC -> 0x56C3
+        HHAHouseInfo HHAHouse; //0x56C4 -> 0x56E9
+        ACNL_DreamAddress DreamCode;  //0x56F0 -> 0x56FB
+        u32 Padding_6; //0x56FC -> 0x56FF
+        Player_Flags PlayerFlags; //0x5700 -> 0x5733
+        u32 HasTPCPic; //0x5734 -> 0x5737
+        u8 TPCPic[0x1400]; //0x5738 -> 0x6B37
+        u16/*wchar*/ TPCText[33]; //0x6B38 -> 0x6B79
+        u8 Unknown1; //0x6B7A //Unknown: Was 1 on a save, 2 on another
+        u8 Unknown2; //0x6B7B
+        u32 Unknown3; //0x6B7C -> 0x6B79
+        u32 Unknown4; //0x6B80 -> 0x6B83
+        u32 Padding_7; //0x6B84 -> 0x6B87
+        u32 Checksum2; //0x6B88 -> 0x6B8B
+        u64 BankAmount; //0x6B8C -> 0x6B93: Encrypted Value
+        u64 DebtAmount; //0x6B94 -> 0x6B9B: Encrypted Value
+        u64 MedalAmount; //0x6B9C -> 0x6BA3: Encrypted Value
+        u64 BellsFromReeseAmount; //0x6BA4 -> 0x6BAB: Encrypted Value
+        u32 Padding_8; //0x6BAC -> 0x6BAF
+        s64 Playtime; //0x6BB0 -> 0x6BB7
+        TownID TownData2; //0x6BC8 -> 0x6BBD
+        u16 Padding_10; //0x6BCE -> 0x6BCF
+        u32 Inventory[16]; //0x6CD0 -> 0x6C0F
+        u8 InventoryItemLocks[16]; //0x6C10 -> 0x6C1F
+        u32 UnlockedItems[0xBA]; //0x6C20 -> 0x6F07 //Game uses one big bitfield for items 'unlocked'. Bits correspond to item ids. Used for catalog, encyclopedia, etc
+        u64 PocketMoney; //0x6F08 -> 0x6F0F: Encrypted Value
+        u32 IslandBox[40]; //0x6F10 -> 0x6FAF
+        u32 IslandInventory[16]; //0x6FB0 -> 0x6FEF
+        u8 IslandInventoryItemLocks[16]; //0x6FF0 -> 0x6FFF: may be Padding also, needs testing
+        u32 UnknownItem1; //0x7000 -> 0x7003
+        u32 UnknownItem2; //0x7004 -> 0x7007
+        ACNL_Letter Letters[10]; //0x7008 -> 0x8907
+        u16/*wchar*/ LetterHeader[0x20]; //0x8908 -> 0x8947
+        u16 Padding_11; //0x8948 -> 0x8949
+        u16/*wchar*/ FutureLetterHeader[0x20]; //0x894A -> 0x8989
+        u16 Padding_12; //0x898A -> 0x898B    
+        u16/*wchar*/ LetterSignature[0x20]; //0x898C -> 0x89CB
+        u16 Padding_13; //0x89CC -> 0x89CD
+        u8 DefaultLtrRecieverNameIndent; //0x89CE -> 0x89CE
+        u8 DefaultFutureLtrRecieverNameIndent; //0x89CF -> 0x89CF //Cannot be >= 0x20
+        Emoticons Emotes; //0x89D0 -> 0x89F7 //Players Emotes (40 slots)
+        s8 EmotePage; //0x89F8 -> 0x89F8 //0xFF = Page 1, 0x00 = Page 2
+        u8 Padding_14; //0x89F9 -> 0x89F9
+        u16 SpotpassDLCRecievedIds[32]; //0x89FA -> 0x8A39 //Not Verified; 0xFFFF is default, then 0xXXXX is ID of DLC recieved
+        u16 Padding_15; //0x8A3A -> 0x8A3B
+        UnknownStruct1 UnkBuffer1; //0x8A3C -> 0x8ABB
+        u16 Padding_16; //0x8ABC -> 0x8ABD
+        LyleFlags LyleFlag; //0x8ABE
+        u8 HasDeductions__; //0x8ABF //Not 100% sure; something to do with items facing a wall, therefore deductions; Reads HouseUnk9 later in code
+        u8 HHAAwardsUnlockedDupe; //0x8AC0
+        u8 GoldExteriorsUnlockedDupe; //0x8AC0
+        u8 HHAUnk1; //0x8AC2
+        u8 HHAUnk2; //0x8AC3 //READU8(CurrentHouseTheme+1) | 0x80; Only When Exterior/Theme???
+        u8 HHAUnk3[0x1C]; //0x8AC3 -> //0x8ADF //Come back to later
+        UnknownStruct2 UnkBuffer2; //0x8AE0 -> 0x8D1B
+        u64 MeowCoupons; //0x8D1C -> 0x8D23: Encrypted Value
+        u64 Unk2; //0x8D24 -> 0x8D2B: Encrypted Value
+        u64 Unk3; //0x8D2C -> 0x8D33: Encrypted Value
+        u64 Unk4; //0x8D34 -> 0x8D3B: Encrypted Value
+        u64 Unk5; //0x8D3C -> 0x8D43: Encrypted Value
+        u64 Unk6; //0x8D44 -> 0x8D4B: Encrypted Value
         UnknownStruct3 UnkBuffer3;
         UnknownStruct4 UnkBuffer4;
         UnknownStruct5 UnkBuffer5;
@@ -1051,10 +1242,10 @@ namespace CTRPluginFramework
         u8 Unk_u8_3; //Set to 0 in player ctor
         u16 Padding_18;
         u32 AddedSongs[3]; //Bitfield for added songs
-        u32 SantaBagInv[10]; //0x9048 -> 0x906F
+        u32 SantaBagInv[10]; //0x8FA8 -> 0x8FCF
         u8 PlayerZero_Filler[0x320]; //Always 0?? Game just memclr's in player ctor
         u32 Dressers[180]; //Each dresser is 60 long
-        u16/*wchar*/ BDayWish[0x22]; //0x9660 -> 0x96A4
+        u16 BDayWish[0x22]; //0x95C0 -> 0x9604
         /*
         ACNL_Letter Letter1; 
         ACNL_Letter Letter2;
@@ -1067,12 +1258,12 @@ namespace CTRPluginFramework
         u8 UnknownNotSetYet8[0xA4];
         */
         u8 UnknownBuffer[0xC84]; 
-        Encyclopedia_Sizes EncyclopediaSizes; //0xA328 -> 0xA484
-        u8 UnkBuffer11[0x84]; //0xA485 -> 0xA507
-        UnknownStruct10 UnkStruct10_1; //0xA508
+        Encyclopedia_Sizes EncyclopediaSizes; //0xA288 -> 0xA3E4
+        u8 UnkBuffer11[0x84]; //0xA3E5 -> 0xA467
+        UnknownStruct10 UnkStruct10_1; //0xA468
         UnknownStruct10 UnkStruct10_2;
         UnknownStruct10 UnkStruct10_3;
-        u32 UnkItem3; //Some Item; Set to 0x00007ffe in player ctor
+        u32 UnkItem3; //Some Item; Set to 0x00007FFE in player ctor
         u16 Padding_19;
     };
 

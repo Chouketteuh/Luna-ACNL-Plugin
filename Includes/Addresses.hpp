@@ -101,7 +101,7 @@ namespace CTRPluginFramework
 	static const u32 USA_OnlineInventory1_Address = 0xA8C360;
 	static const u32 USA_OnlineInventory2_Address = 0xA967E0;
 	static const u32 USA_OnlineInventory3_Address = 0xAA0C60;
-	static const u32 USA_Outfit_Address = 0x31F2702A; //0x3307770, 0x33077CDC
+	static const u32 USA_OnlineOutfit0_Address = 0x31F2702A; // Hat (+ 0x4 for each piece)
 	static const u32 USA_ActualRoom_Address = 0x94F4C5;
 	static const u32 USA_RoomID_Address = 0x958342;
 	static const u32 USA_Island_Address = 0x301DC290;
@@ -120,6 +120,8 @@ namespace CTRPluginFramework
 	static const u32 EUR_SaveMenu_Address = 0x1A09A0;
 	static const u32 USA_UnlockCamera_Address = 0x1A51C8;
 	static const u32 EUR_UnlockCamera_Address = 0x1A51E8;
+	static const u32 USA_CameraPan_Address = 0x1A2058;
+	static const u32 EUR_CameraPan_Address = 0x1A2078;
 	static const u32 USA_Thought_Address = 0x94FD88;
 	static const u32 EUR_Thought_Address = 0x94ED88;
 	static const u32 USA_PlayerIndex_Address = 0x82E93EC;
@@ -274,6 +276,10 @@ namespace CTRPluginFramework
 	static const u32 EUR_ASM_DropReplaceSwitch = 0x5A0168;
 	static const u32 USA_ASM_RemoveSentCharacters = 0x1939F0;
 	static const u32 USA_ASM_BottomScreenMenu = 0x6D2B50;
+	static const u32 USA_ASM_Camera = 0x764504;
+	static const u32 EUR_ASM_Camera = 0x76350C;
+	static const u32 USA_ASM_CameraRotation = 0x1A3230;
+	static const u32 EUR_ASM_CameraRotation = 0x1A3250;
 
 	static const u32 USA_Repalce_Hook = 0x165528;
 	static const u32 EUR_Repalce_Hook = 0x165548;
